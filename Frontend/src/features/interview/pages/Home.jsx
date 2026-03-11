@@ -54,9 +54,35 @@ const Home = () => {
 
     const handleDelete = (e, id) => {
         e.stopPropagation(); // Prevents the card click from triggering navigation
-        if(window.confirm("Are you sure you want to permanently delete this report?")) {
-            deleteReport(id);
-        }
+        
+        // FAANG Upgrade: Custom interactive toast instead of window.confirm
+        toast((t) => (
+            <div>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>
+                    Are you sure you want to permanently delete this report?
+                </p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id); // Close the toast
+                            deleteReport(id);    // Execute the delete
+                        }}
+                        style={{ background: '#ff4d4d', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                        Yes, Delete
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)} // Just close the toast
+                        style={{ background: '#3c4453', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        ), { 
+            duration: Infinity, // Keeps the toast open until they click a button
+            id: `delete-confirm-${id}` 
+        });
     }
 
     // NEW FAANG SKELETON LOADER
