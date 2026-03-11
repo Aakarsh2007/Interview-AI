@@ -63,4 +63,44 @@ interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware, interview
  */
 interviewRouter.delete("/:id", authMiddleware, interviewController.deleteInterviewReportController);
 
+/**
+ * 🔥 NEW FAANG FEATURE: Toggle Task Tracker
+ * @route PATCH /api/interview/:id/task
+ * @description Toggle a task completion status in the preparation roadmap
+ * @access private
+ */
+interviewRouter.patch("/:id/task", authMiddleware, interviewController.toggleTaskCompletionController);
+
+/**
+ * 🔥 NEW FAANG FEATURE: Evaluate Mock Interview Answer
+ * @route POST /api/interview/mock/evaluate
+ * @description Send a single QA pair to Gemini for a score and feedback
+ * @access private
+ */
+interviewRouter.post("/mock/evaluate", authMiddleware, interviewController.evaluateAnswerController);
+
+/**
+ * 🔥 NEW FAANG FEATURE: Save Mock Interview Results
+ * @route POST /api/interview/mock/save
+ * @description Save the final completed mock interview to the database
+ * @access private
+ */
+interviewRouter.post("/mock/save", authMiddleware, interviewController.saveMockInterviewController);
+
+/**
+ * 🔥 NEW FAANG FEATURE: Get All Mock Interviews
+ * @route GET /api/interview/mock
+ * @description Fetch all completed mock interviews for the dashboard
+ * @access private
+ */
+interviewRouter.get("/mock", authMiddleware, interviewController.getAllMockInterviewsController);
+
+/**
+ * 🔥 NEW FAANG FEATURE: Delete Mock Interview
+ * @route DELETE /api/interview/mock/:id
+ * @description Delete a specific mock interview
+ * @access private
+ */
+interviewRouter.delete("/mock/:id", authMiddleware, interviewController.deleteMockInterviewController);
+
 module.exports = interviewRouter;

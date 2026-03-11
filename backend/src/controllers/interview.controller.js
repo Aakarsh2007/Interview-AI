@@ -1,6 +1,7 @@
 const pdfParse = require("pdf-parse");
-const { generateInterviewReport, generateResumePdf } = require("../services/ai.service");
+const { generateInterviewReport, generateResumePdf, evaluateMockInterviewAnswer } = require("../services/ai.service");
 const interviewReportModel = require("../models/interviewReport.model");
+const mockInterviewModel = require("../models/mockInterview.model"); // 🔥 NEW IMPORT
 
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
@@ -143,7 +144,6 @@ async function deleteInterviewReportController(req, res) {
     try {
         const { id } = req.params;
 
-        // Find and delete the report, ensuring it belongs to the logged-in user!
         const deletedReport = await interviewReportModel.findOneAndDelete({ 
             _id: id, 
             user: req.user.id 
@@ -160,10 +160,135 @@ async function deleteInterviewReportController(req, res) {
     }
 }
 
+/**
+ * @description Controller to add/remove a specific task from the completedTasks array
+ */
+async function toggleTaskCompletionController(req, res) {
+    try {
+        const { id } = req.params;
+        const { taskString } = req.body;
+
+        if (!taskString) {
+            return res.status(400).json({ message: "Task string is required" });
+        }
+
+        const report = await interviewReportModel.findOne({ _id: id, user: req.user.id });
+        if (!report) {
+            return res.status(404).json({ message: "Report not found." });
+        }
+
+        const isCompleted = report.completedTasks.includes(taskString);
+        
+        const updatedReport = await interviewReportModel.findOneAndUpdate(
+            { _id: id, user: req.user.id },
+            isCompleted 
+                ? { $pull: { completedTasks: taskString } } 
+                : { $push: { completedTasks: taskString } }, 
+            { new: true } 
+        );
+
+        res.status(200).json({ 
+            message: "Task toggled successfully", 
+            completedTasks: updatedReport.completedTasks 
+        });
+
+    } catch (error) {
+        console.error("Toggle Task Error:", error);
+        res.status(500).json({ message: "Server error while updating task", error: error.message });
+    }
+}
+
+// 🔥 NEW FAANG FEATURE: Evaluate an Answer using Gemini
+async function evaluateAnswerController(req, res) {
+    try {
+        const { question, userAnswer, jobTitle } = req.body;
+
+        if (!question || !userAnswer || !jobTitle) {
+            return res.status(400).json({ message: "Question, userAnswer, and jobTitle are required." });
+        }
+
+        // Call the AI Service
+        const evaluation = await evaluateMockInterviewAnswer({ question, userAnswer, jobTitle });
+
+        res.status(200).json({ message: "Evaluation successful", evaluation });
+    } catch (error) {
+        console.error("Evaluate Answer Error:", error);
+        res.status(500).json({ message: "Server error evaluating answer", error: error.message });
+    }
+}
+
+// 🔥 NEW FAANG FEATURE: Save the final Mock Interview to Database
+async function saveMockInterviewController(req, res) {
+    try {
+        const { interviewReportId, jobTitle, qaList, totalScore } = req.body;
+
+        if (!interviewReportId || !qaList || totalScore === undefined) {
+            return res.status(400).json({ message: "Missing required fields to save mock interview." });
+        }
+
+        const newMockInterview = await mockInterviewModel.create({
+            user: req.user.id,
+            interviewReport: interviewReportId,
+            jobTitle,
+            qaList,
+            totalScore
+        });
+
+        res.status(201).json({ 
+            message: "Mock interview saved successfully!", 
+            mockInterview: newMockInterview 
+        });
+    } catch (error) {
+        console.error("Save Mock Interview Error:", error);
+        res.status(500).json({ message: "Server error saving mock interview", error: error.message });
+    }
+}
+
+// 🔥 NEW FAANG FEATURE: Get all saved mock interviews for the dashboard
+async function getAllMockInterviewsController(req, res) {
+    try {
+        const mockInterviews = await mockInterviewModel
+            .find({ user: req.user.id })
+            .sort({ createdAt: -1 }); // Newest first!
+
+        res.status(200).json({
+            message: "Mock interviews fetched successfully.",
+            mockInterviews
+        });
+    } catch (error) {
+        console.error("Get All Mock Interviews Error:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+// 🔥 NEW FAANG FEATURE: Delete a specific mock interview
+async function deleteMockInterviewController(req, res) {
+    try {
+        const { id } = req.params;
+        const deletedMock = await mockInterviewModel.findOneAndDelete({ _id: id, user: req.user.id });
+
+        if (!deletedMock) {
+            return res.status(404).json({ message: "Mock interview not found or unauthorized." });
+        }
+
+        res.status(200).json({ message: "Mock interview deleted successfully." });
+    } catch (error) {
+        console.error("Delete Mock Interview Error:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+
+
 module.exports = {
     generateInterViewReportController,
     getInterviewReportByIdController,
     getAllInterviewReportsController,
     generateResumePdfController,
-    deleteInterviewReportController
+    deleteInterviewReportController,
+    toggleTaskCompletionController,
+    evaluateAnswerController, // Exported!
+    getAllMockInterviewsController,
+    deleteMockInterviewController,
+    saveMockInterviewController // Exported!
 };

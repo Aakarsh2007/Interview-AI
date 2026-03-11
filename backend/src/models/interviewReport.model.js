@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const technicalQuestionSchema = new mongoose.Schema({
     question: {
         type: String,
@@ -84,6 +83,14 @@ const interviewReportSchema = new mongoose.Schema({
     behavioralQuestions: [ behavioralQuestionSchema ],
     skillGaps: [ skillGapSchema ],
     preparationPlan: [ preparationPlanSchema ],
+    
+    // 🔥 NEW FAANG FEATURE: ROADMAP TRACKER
+    // Stores the exact string of the tasks the user has checked off.
+    completedTasks: {
+        type: [ String ],
+        default: []
+    },
+
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users"
@@ -96,7 +103,6 @@ const interviewReportSchema = new mongoose.Schema({
     timestamps: true
 })
 
-
 const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);
 
-module.exports = interviewReportModel;  
+module.exports = interviewReportModel;

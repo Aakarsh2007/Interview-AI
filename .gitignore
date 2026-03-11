@@ -43,3 +43,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# documentation generator
+generateProjectPDF.js
+
+# generated documentation
+Project_Documentation.pdf

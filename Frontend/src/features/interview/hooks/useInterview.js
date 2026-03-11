@@ -1,8 +1,8 @@
-import { getAllInterviewReports, generateInterviewReport, getInterviewReportById, generateResumePdf, deleteInterviewReport } from "../services/interview.api"
+import { getAllInterviewReports, generateInterviewReport, getInterviewReportById, generateResumePdf, deleteInterviewReport, toggleTaskCompletion, evaluateMockAnswer, saveMockInterview } from "../services/interview.api"
 import { useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context"
 import { useParams } from "react-router"
-import toast from 'react-hot-toast' // <-- NEW IMPORT
+import toast from 'react-hot-toast' 
 
 export const useInterview = () => {
 
@@ -17,7 +17,7 @@ export const useInterview = () => {
 
     const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
         setLoading(true)
-        const loadingToast = toast.loading("Analyzing profile & generating strategy...") // Show loading toast
+        const loadingToast = toast.loading("Analyzing profile & generating strategy...") 
         try {
             const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
             setReport(response.interviewReport)
@@ -26,11 +26,11 @@ export const useInterview = () => {
             localStorage.removeItem("jobDescription")
             localStorage.removeItem("selfDescription")
             
-            toast.success("Strategy generated successfully!", { id: loadingToast }) // Update toast on success
+            toast.success("Strategy generated successfully!", { id: loadingToast }) 
             return response.interviewReport
         } catch (error) {
             console.log("Generate Report Error:", error)
-            toast.error(error.response?.data?.message || "Failed to generate report. Please check your inputs.", { id: loadingToast }) // Update toast on error
+            toast.error(error.response?.data?.message || "Failed to generate report. Please check your inputs.", { id: loadingToast }) 
             return null;
         } finally {
             setLoading(false)
@@ -65,16 +65,27 @@ export const useInterview = () => {
         }
     }
 
-    // NEW FAANG FEATURE: Delete Report
     const deleteReport = async (id) => {
         try {
             await deleteInterviewReport(id)
-            // Optimistic UI Update: Remove it from the list instantly without reloading
             setReports(prevReports => prevReports.filter(report => report._id !== id))
-            toast.success("Report deleted successfully.") // Success toast
+            toast.success("Report deleted successfully.") 
         } catch (error) {
             console.log("Delete Report Error:", error)
             toast.error("Failed to delete report.");
+        }
+    }
+
+    const toggleTask = async (id, taskString) => {
+        try {
+            const response = await toggleTaskCompletion(id, taskString);
+            setReport(prevReport => ({
+                ...prevReport,
+                completedTasks: response.completedTasks
+            }));
+        } catch (error) {
+            console.log("Toggle Task Error:", error);
+            toast.error("Failed to update task status.");
         }
     }
 
@@ -99,6 +110,35 @@ export const useInterview = () => {
         }
     }
 
+    // 🔥 NEW FAANG FEATURE: Evaluate Single Answer (Stateless, no global loading screen)
+    const evaluateAnswer = async ({ question, userAnswer, jobTitle }) => {
+        try {
+            const response = await evaluateMockAnswer({ question, userAnswer, jobTitle });
+            return response.evaluation; // Returns { score, feedback }
+        } catch (error) {
+            console.log("Evaluate Answer Error:", error);
+            toast.error("Failed to evaluate answer. Please try again.");
+            return null;
+        }
+    }
+
+    // 🔥 NEW FAANG FEATURE: Save Final Mock Interview (Stateful, with loading screen)
+    const submitMockInterview = async (payload) => {
+        setLoading(true);
+        const loadingToast = toast.loading("Saving interview results...");
+        try {
+            const response = await saveMockInterview(payload);
+            toast.success("Mock Interview saved successfully!", { id: loadingToast });
+            return response.mockInterview;
+        } catch (error) {
+            console.log("Save Mock Interview Error:", error);
+            toast.error("Failed to save mock interview.", { id: loadingToast });
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }
+
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
@@ -107,5 +147,10 @@ export const useInterview = () => {
         }
     }, [ interviewId ])
 
-    return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf, deleteReport }
+    // Export the two new functions!
+    return { 
+        loading, report, reports, 
+        generateReport, getReportById, getReports, getResumePdf, deleteReport, toggleTask, 
+        evaluateAnswer, submitMockInterview 
+    }
 }
