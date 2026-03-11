@@ -18,3 +18,16 @@ body,
 .highlight{
     color: #d20d3b;
 }
+
+/* FAANG SKELETON LOADER ANIMATION */
+@keyframes pulse {
+    0% { background-color: #2a2e35; }
+    50% { background-color: #3c4453; }
+    100% { background-color: #2a2e35; }
+}
+
+.skeleton {
+    animation: pulse 1.5s infinite ease-in-out;
+    border-radius: 8px;
+    width: 100%;
+}

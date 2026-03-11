@@ -3,8 +3,6 @@ import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, useParams } from 'react-router'
 
-
-
 const NAV_ITEMS = [
     { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
     { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
@@ -12,26 +10,60 @@ const NAV_ITEMS = [
 ]
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+// FAANG UX Upgrade: Added explicit toggle button for better usability
 const QuestionCard = ({ item, index }) => {
     const [ open, setOpen ] = useState(false)
     return (
-        <div className='q-card'>
-            <div className='q-card__header' onClick={() => setOpen(o => !o)}>
-                <span className='q-card__index'>Q{index + 1}</span>
-                <p className='q-card__question'>{item.question}</p>
-                <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </span>
+        <div className={`q-card ${open ? 'q-card--open' : ''}`} style={{ marginBottom: '1.5rem', border: '1px solid #2a2e35', borderRadius: '8px', overflow: 'hidden' }}>
+            {/* Header / Question Area */}
+            <div className='q-card__header' style={{ padding: '1.5rem', background: '#1a1d24' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <span className='q-card__index' style={{ color: '#ff2d78', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '2px' }}>Q{index + 1}</span>
+                    <div style={{ flex: 1 }}>
+                        <p className='q-card__question' style={{ fontSize: '1.1rem', lineHeight: '1.5', color: '#e1e7ef', margin: '0 0 1rem 0' }}>{item.question}</p>
+                        
+                        {/* THE NEW BUTTON */}
+                        <button 
+                            onClick={() => setOpen(!open)}
+                            style={{ 
+                                background: 'transparent', 
+                                border: '1px solid #3c4453', 
+                                color: '#a0aab8', 
+                                padding: '6px 14px', 
+                                borderRadius: '20px', 
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                            onMouseOut={(e) => e.currentTarget.style.color = '#a0aab8'}
+                        >
+                            {open ? 'Hide Answer' : 'View Suggested Answer'}
+                            <svg 
+                                style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} 
+                                xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {/* Expandable Body */}
             {open && (
-                <div className='q-card__body'>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--intention'>Intention</span>
-                        <p>{item.intention}</p>
+                <div className='q-card__body' style={{ padding: '1.5rem', background: '#14171c', borderTop: '1px solid #2a2e35' }}>
+                    <div className='q-card__section' style={{ marginBottom: '1.5rem' }}>
+                        <span className='q-card__tag q-card__tag--intention' style={{ display: 'inline-block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#58a6ff', marginBottom: '0.5rem', fontWeight: 'bold' }}>Interviewer Intention</span>
+                        <p style={{ color: '#8b949e', lineHeight: '1.6', margin: 0 }}>{item.intention}</p>
                     </div>
                     <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
-                        <p>{item.answer}</p>
+                        <span className='q-card__tag q-card__tag--answer' style={{ display: 'inline-block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#3fb950', marginBottom: '0.5rem', fontWeight: 'bold' }}>How to Answer</span>
+                        <p style={{ color: '#c9d1d9', lineHeight: '1.6', margin: 0 }}>{item.answer}</p>
                     </div>
                 </div>
             )}
@@ -61,6 +93,7 @@ const Interview = () => {
     const [ activeNav, setActiveNav ] = useState('technical')
     const { report, getReportById, loading, getResumePdf } = useInterview()
     const { interviewId } = useParams()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (interviewId) {
@@ -68,13 +101,35 @@ const Interview = () => {
         }
     }, [ interviewId ])
 
-
-
+    // FAANG FEATURE: SKELETON LOADER
     if (loading || !report) {
         return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
+            <div className='interview-page'>
+                <div className='interview-layout'>
+                    {/* Left Nav Skeleton */}
+                    <nav className='interview-nav' style={{ background: 'transparent' }}>
+                        <div className="skeleton" style={{ height: '250px' }}></div>
+                    </nav>
+
+                    <div className='interview-divider' />
+
+                    {/* Main Content Skeleton */}
+                    <main className='interview-content'>
+                        <div className="skeleton" style={{ height: '50px', width: '300px', marginBottom: '2rem' }}></div>
+                        <div className="skeleton" style={{ height: '140px', marginBottom: '1.5rem' }}></div>
+                        <div className="skeleton" style={{ height: '140px', marginBottom: '1.5rem' }}></div>
+                        <div className="skeleton" style={{ height: '140px' }}></div>
+                    </main>
+
+                    <div className='interview-divider' />
+
+                    {/* Right Sidebar Skeleton */}
+                    <aside className='interview-sidebar'>
+                        <div className="skeleton" style={{ height: '180px', marginBottom: '2rem' }}></div>
+                        <div className="skeleton" style={{ height: '250px' }}></div>
+                    </aside>
+                </div>
+            </div>
         )
     }
 
@@ -82,13 +137,22 @@ const Interview = () => {
         report.matchScore >= 80 ? 'score--high' :
             report.matchScore >= 60 ? 'score--mid' : 'score--low'
 
-
     return (
         <div className='interview-page'>
             <div className='interview-layout'>
 
                 {/* ── Left Nav ── */}
                 <nav className='interview-nav'>
+                    <div style={{ padding: '0 1rem 1.5rem 1rem' }}>
+                        <button 
+                            onClick={() => navigate('/home')} 
+                            style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', padding: 0 }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            Back to Dashboard
+                        </button>
+                    </div>
+
                     <div className="nav-content">
                         <p className='interview-nav__label'>Sections</p>
                         {NAV_ITEMS.map(item => (
@@ -118,10 +182,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Technical Questions</h2>
-                                <span className='content-header__count'>{report.technicalQuestions.length} questions</span>
+                                <span className='content-header__count'>{report.technicalQuestions?.length || 0} questions</span>
                             </div>
                             <div className='q-list'>
-                                {report.technicalQuestions.map((q, i) => (
+                                {report.technicalQuestions?.map((q, i) => (
                                     <QuestionCard key={i} item={q} index={i} />
                                 ))}
                             </div>
@@ -132,10 +196,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Behavioral Questions</h2>
-                                <span className='content-header__count'>{report.behavioralQuestions.length} questions</span>
+                                <span className='content-header__count'>{report.behavioralQuestions?.length || 0} questions</span>
                             </div>
                             <div className='q-list'>
-                                {report.behavioralQuestions.map((q, i) => (
+                                {report.behavioralQuestions?.map((q, i) => (
                                     <QuestionCard key={i} item={q} index={i} />
                                 ))}
                             </div>
@@ -146,10 +210,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Preparation Road Map</h2>
-                                <span className='content-header__count'>{report.preparationPlan.length}-day plan</span>
+                                <span className='content-header__count'>{report.preparationPlan?.length || 0}-day plan</span>
                             </div>
                             <div className='roadmap-list'>
-                                {report.preparationPlan.map((day) => (
+                                {report.preparationPlan?.map((day) => (
                                     <RoadMapDay key={day.day} day={day} />
                                 ))}
                             </div>
@@ -169,7 +233,7 @@ const Interview = () => {
                             <span className='match-score__value'>{report.matchScore}</span>
                             <span className='match-score__pct'>%</span>
                         </div>
-                        <p className='match-score__sub'>Strong match for this role</p>
+                        <p className='match-score__sub'>Based on Job Description</p>
                     </div>
 
                     <div className='sidebar-divider' />
@@ -178,7 +242,7 @@ const Interview = () => {
                     <div className='skill-gaps'>
                         <p className='skill-gaps__label'>Skill Gaps</p>
                         <div className='skill-gaps__list'>
-                            {report.skillGaps.map((gap, i) => (
+                            {report.skillGaps?.map((gap, i) => (
                                 <span key={i} className={`skill-tag skill-tag--${gap.severity}`}>
                                     {gap.skill}
                                 </span>

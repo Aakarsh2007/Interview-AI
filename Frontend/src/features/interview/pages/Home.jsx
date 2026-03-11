@@ -1,20 +1,31 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useAuth } from '../../auth/hooks/useAuth.js' 
 import { useNavigate } from 'react-router'
+import toast from 'react-hot-toast' // <-- NEW IMPORT FOR TOASTS
 
 const Home = () => {
 
-    const { loading, generateReport, reports } = useInterview()
+    const { loading, generateReport, reports, deleteReport } = useInterview()
     const { handleLogout, user } = useAuth() 
     
-    const [ jobDescription, setJobDescription ] = useState("")
-    const [ selfDescription, setSelfDescription ] = useState("")
+    // FAANG FEATURE: Initialize state from LocalStorage so data survives page refreshes!
+    const [ jobDescription, setJobDescription ] = useState(() => localStorage.getItem("jobDescription") || "")
+    const [ selfDescription, setSelfDescription ] = useState(() => localStorage.getItem("selfDescription") || "")
     const [ fileName, setFileName ] = useState("") 
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
+
+    // Auto-Save whenever the user types
+    useEffect(() => {
+        localStorage.setItem("jobDescription", jobDescription);
+    }, [jobDescription]);
+
+    useEffect(() => {
+        localStorage.setItem("selfDescription", selfDescription);
+    }, [selfDescription]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -22,13 +33,17 @@ const Home = () => {
     }
 
     const handleGenerateReport = async () => {
-        // Validation Guards
-        if (!jobDescription) return alert("Please paste a Target Job Description!");
+        // Validation Guards with sleek Toasts instead of alerts
+        if (!jobDescription) {
+            toast.error("Please paste a Target Job Description!");
+            return;
+        }
         if (!selfDescription && !resumeInputRef.current?.files[0]) {
-            return alert("Please provide either a Resume or a Quick Self-Description!");
+            toast.error("Please provide either a Resume or a Quick Self-Description!");
+            return;
         }
 
-        const resumeFile = resumeInputRef.current.files[0]
+        const resumeFile = resumeInputRef.current?.files[0]
         const data = await generateReport({ jobDescription, selfDescription, resumeFile })
         
         // Only navigate if it successfully returned data
@@ -37,11 +52,28 @@ const Home = () => {
         }
     }
 
+    const handleDelete = (e, id) => {
+        e.stopPropagation(); // Prevents the card click from triggering navigation
+        if(window.confirm("Are you sure you want to permanently delete this report?")) {
+            deleteReport(id);
+        }
+    }
+
+    // NEW FAANG SKELETON LOADER
     if (loading) {
         return (
-            <main className='loading-screen' style={{display: 'flex', justifyContent:'center', alignItems: 'center', height: '100vh', color: 'white'}}>
-                <h1>Analyzing your profile... (This takes about 20s)</h1>
-            </main>
+            <div className='home-page' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4rem' }}>
+                <div className="skeleton" style={{ height: '40px', width: '350px', marginBottom: '1rem' }}></div>
+                <div className="skeleton" style={{ height: '20px', width: '500px', marginBottom: '3rem' }}></div>
+                
+                <div className='interview-card' style={{ width: '100%', maxWidth: '900px', border: 'none', background: 'transparent' }}>
+                    <div className='interview-card__body' style={{ gap: '2rem', padding: 0 }}>
+                        <div className="skeleton" style={{ height: '350px', flex: 1 }}></div>
+                        <div className="skeleton" style={{ height: '350px', flex: 1 }}></div>
+                    </div>
+                </div>
+                <h3 style={{ color: '#8b949e', marginTop: '2rem' }}>AI is analyzing your profile... (Approx 20s)</h3>
+            </div>
         )
     }
 
@@ -76,6 +108,7 @@ const Home = () => {
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
+                            value={jobDescription} // Bind value to state for auto-save
                             onChange={(e) => { setJobDescription(e.target.value) }}
                             className='panel__textarea'
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
@@ -121,6 +154,7 @@ const Home = () => {
                         <div className='self-description'>
                             <label className='section-label' htmlFor='selfDescription'>Quick Self-Description</label>
                             <textarea
+                                value={selfDescription} // Bind value to state for auto-save
                                 onChange={(e) => { setSelfDescription(e.target.value) }}
                                 id='selfDescription'
                                 name='selfDescription'
@@ -157,10 +191,22 @@ const Home = () => {
                     <h2>My Recent Interview Plans</h2>
                     <ul className='reports-list'>
                         {reports.map(report => (
-                            <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
+                            <li key={report._id} className='report-item' style={{ position: 'relative' }} onClick={() => navigate(`/interview/${report._id}`)}>
                                 <h3>{report.title || 'Untitled Position'}</h3>
                                 <p className='report-meta'>Generated on {new Date(report.createdAt).toLocaleDateString()}</p>
                                 <p className={`match-score ${report.matchScore >= 80 ? 'score--high' : report.matchScore >= 60 ? 'score--mid' : 'score--low'}`}>Match Score: {report.matchScore}%</p>
+                                
+                                {/* DELETE BUTTON */}
+                                <button 
+                                    onClick={(e) => handleDelete(e, report._id)}
+                                    style={{
+                                        position: 'absolute', top: '15px', right: '15px', background: 'transparent', 
+                                        border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: '5px'
+                                    }}
+                                    title="Delete Report"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
                             </li>
                         ))}
                     </ul>

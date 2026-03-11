@@ -7,32 +7,34 @@ const interviewReportModel = require("../models/interviewReport.model");
  */
 async function generateInterViewReportController(req, res) {
     try {
-        // 1. Safety Check: Did they actually upload a file?
-        if (!req.file) {
-            return res.status(400).json({ message: "Resume PDF file is required." });
-        }
-
         const { selfDescription, jobDescription } = req.body;
-        if (!selfDescription || !jobDescription) {
-            return res.status(400).json({ message: "Self description and job description are required." });
+        const hasFile = !!req.file;
+        const hasSelfDescription = !!selfDescription && selfDescription.trim().length > 0;
+
+        // 1. Strict Validation Guards (FAANG Upgrade: "OR" Logic)
+        if (!jobDescription) {
+            return res.status(400).json({ message: "Job description is required." });
         }
 
-        // 2. Bulletproof PDF Parsing (Handles different versions of the pdf-parse package)
+        if (!hasFile && !hasSelfDescription) {
+            return res.status(400).json({ message: "Please provide either a Resume PDF or a Quick Self Description." });
+        }
+
+        // 2. Safely parse the PDF ONLY if a file was uploaded
         let resumeContentText = "";
-        if (typeof pdfParse === "function") {
-            // Standard parsing
-            const parsedPdf = await pdfParse(req.file.buffer);
-            resumeContentText = parsedPdf.text;
-        } else if (pdfParse && pdfParse.PDFParse) {
-            // Fallback to your original custom logic
-            const parsedPdf = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
-            resumeContentText = parsedPdf.text || parsedPdf;
-        } else if (pdfParse && typeof pdfParse.default === "function") {
-             // Final safety net
-             const parsedPdf = await pdfParse.default(req.file.buffer);
-             resumeContentText = parsedPdf.text;
-        } else {
-             throw new Error("PDF parser could not be initialized.");
+        if (hasFile) {
+            if (typeof pdfParse === "function") {
+                const parsedPdf = await pdfParse(req.file.buffer);
+                resumeContentText = parsedPdf.text;
+            } else if (pdfParse && pdfParse.PDFParse) {
+                const parsedPdf = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
+                resumeContentText = parsedPdf.text || parsedPdf;
+            } else if (pdfParse && typeof pdfParse.default === "function") {
+                 const parsedPdf = await pdfParse.default(req.file.buffer);
+                 resumeContentText = parsedPdf.text;
+            } else {
+                 throw new Error("PDF parser could not be initialized.");
+            }
         }
 
         // 3. Call the AI Service
@@ -134,9 +136,34 @@ async function generateResumePdfController(req, res) {
     }
 }
 
+/**
+ * @description Controller to delete a specific interview report.
+ */
+async function deleteInterviewReportController(req, res) {
+    try {
+        const { id } = req.params;
+
+        // Find and delete the report, ensuring it belongs to the logged-in user!
+        const deletedReport = await interviewReportModel.findOneAndDelete({ 
+            _id: id, 
+            user: req.user.id 
+        });
+
+        if (!deletedReport) {
+            return res.status(404).json({ message: "Report not found or you are not authorized to delete it." });
+        }
+
+        res.status(200).json({ message: "Interview report deleted successfully." });
+    } catch (error) {
+        console.error("Delete Report Error:", error);
+        res.status(500).json({ message: "Server error while deleting report", error: error.message });
+    }
+}
+
 module.exports = {
     generateInterViewReportController,
     getInterviewReportByIdController,
     getAllInterviewReportsController,
-    generateResumePdfController
+    generateResumePdfController,
+    deleteInterviewReportController
 };
