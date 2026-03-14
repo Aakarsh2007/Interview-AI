@@ -1,19 +1,19 @@
-import axios from "axios"
+import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://interview-ai-backend-z9lt.onrender.com/",
+    baseURL: "https://interview-ai-backend-z9lt.onrender.com",
     withCredentials: true
-})
+});
 
 export async function register({ username, email, password }) {
     try {
-        const response = await api.post('/api/auth/register', {
+        const response = await api.post("/api/auth/register", {
             username, email, password
-        })
-        return response.data
+        });
+        return response.data;
     } catch (err) {
-        console.log(err)
-        throw err; 
+        console.log(err);
+        throw err;
     }
 }
 
@@ -21,30 +21,30 @@ export async function login({ email, password }) {
     try {
         const response = await api.post("/api/auth/login", {
             email, password
-        })
-        return response.data
+        });
+        return response.data;
     } catch (err) {
-        console.log(err)
+        console.log(err);
         throw err;
     }
 }
 
 export async function logout() {
     try {
-        const response = await api.post("/api/auth/logout")
-        return response.data
+        const response = await api.post("/api/auth/logout");
+        return response.data;
     } catch (err) {
-        console.log(err)
+        console.log(err);
         throw err;
     }
 }
 
 export async function getMe() {
     try {
-        const response = await api.get("/api/auth/me")
-        return response.data
+        const response = await api.get("/api/auth/me");
+        return response.data;
     } catch (err) {
-        console.log(err)
+        console.log(err);
         throw err;
     }
 }
