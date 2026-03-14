@@ -22,7 +22,6 @@ export const useInterview = () => {
             const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
             setReport(response.interviewReport)
             
-            // UX Polish: Clear auto-saved form data after successful generation!
             localStorage.removeItem("jobDescription")
             localStorage.removeItem("selfDescription")
             
@@ -110,11 +109,10 @@ export const useInterview = () => {
         }
     }
 
-    // 🔥 NEW FAANG FEATURE: Evaluate Single Answer (Stateless, no global loading screen)
     const evaluateAnswer = async ({ question, userAnswer, jobTitle }) => {
         try {
             const response = await evaluateMockAnswer({ question, userAnswer, jobTitle });
-            return response.evaluation; // Returns { score, feedback }
+            return response.evaluation;
         } catch (error) {
             console.log("Evaluate Answer Error:", error);
             toast.error("Failed to evaluate answer. Please try again.");
@@ -122,7 +120,6 @@ export const useInterview = () => {
         }
     }
 
-    // 🔥 NEW FAANG FEATURE: Save Final Mock Interview (Stateful, with loading screen)
     const submitMockInterview = async (payload) => {
         setLoading(true);
         const loadingToast = toast.loading("Saving interview results...");
@@ -147,7 +144,6 @@ export const useInterview = () => {
         }
     }, [ interviewId ])
 
-    // Export the two new functions!
     return { 
         loading, report, reports, 
         generateReport, getReportById, getReports, getResumePdf, deleteReport, toggleTask, 

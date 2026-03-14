@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useInterview } from '../hooks/useInterview';
-import { getAllMockInterviews, deleteMockInterview } from '../services/interview.api'; // 🔥 Imported the new delete API
+import { getAllMockInterviews, deleteMockInterview } from '../services/interview.api';
 import { useNavigate } from 'react-router';
 import toast from 'react-hot-toast';
 
@@ -8,13 +8,11 @@ const Home = () => {
     const { generateReport, reports, getReports, loading, deleteReport } = useInterview();
     const navigate = useNavigate();
 
-    // --- FORM STATE ---
     const [jobDescription, setJobDescription] = useState('');
     const [selfDescription, setSelfDescription] = useState('');
     const [resumeFile, setResumeFile] = useState(null);
 
-    // --- DASHBOARD TABS STATE ---
-    const [activeTab, setActiveTab] = useState('strategies'); // 'strategies' or 'mocks'
+    const [activeTab, setActiveTab] = useState('strategies');
     const [mockInterviews, setMockInterviews] = useState([]);
 
     useEffect(() => {
@@ -55,9 +53,8 @@ const Home = () => {
         navigate('/login');
     };
 
-    // 🔥 SMART CUSTOM DELETE TOAST (Handles both Strategies and Mocks)
     const handleDeleteClick = (e, id, type) => {
-        e.stopPropagation(); // Stops the card from navigating
+        e.stopPropagation();
         
         toast((t) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px' }}>
@@ -68,13 +65,13 @@ const Home = () => {
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                     <button 
                         onClick={async () => {
-                            toast.dismiss(t.id); // Close the toast immediately
+                            toast.dismiss(t.id);
                             if (type === 'strategy') {
-                                deleteReport(id); // Uses your hook
+                                deleteReport(id);
                             } else if (type === 'mock') {
                                 try {
-                                    await deleteMockInterview(id); // Calls the backend
-                                    setMockInterviews(prev => prev.filter(m => m._id !== id)); // Updates UI instantly
+                                    await deleteMockInterview(id);
+                                    setMockInterviews(prev => prev.filter(m => m._id !== id));
                                     toast.success("Mock interview deleted.");
                                 } catch (error) {
                                     toast.error("Failed to delete mock interview.");
@@ -116,7 +113,6 @@ const Home = () => {
                 </button>
             </div>
 
-            {/* ── GENERATOR FORM ── */}
             <div style={{ background: '#14171c', padding: '2rem', borderRadius: '12px', border: '1px solid #3c4453', marginBottom: '3rem', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
                 <h2 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', color: '#58a6ff' }}>Generate New Strategy</h2>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -159,9 +155,7 @@ const Home = () => {
                 </form>
             </div>
 
-            {/* ── HISTORY DASHBOARD ── */}
             <div>
-                {/* Tabs */}
                 <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #3c4453', marginBottom: '2rem' }}>
                     <button 
                         onClick={() => setActiveTab('strategies')}
@@ -177,13 +171,12 @@ const Home = () => {
                     </button>
                 </div>
 
-                {/* Strategy List */}
                 {activeTab === 'strategies' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                         {reports?.length === 0 ? <p style={{ color: '#8b949e' }}>No strategies generated yet.</p> : null}
                         {reports?.map((report) => (
                             <div key={report._id} onClick={() => navigate(`/interview/${report._id}`)} style={{ background: '#14171c', border: '1px solid #3c4453', borderRadius: '8px', padding: '1.5rem', cursor: 'pointer', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                
+
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#e1e7ef', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', paddingRight: '10px' }}>{report.title}</h3>
                                     
@@ -202,7 +195,6 @@ const Home = () => {
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                         </button>
                                     </div>
-
                                 </div>
                                 <span style={{ color: '#8b949e', fontSize: '0.85rem', marginTop: 'auto' }}>{new Date(report.createdAt).toLocaleDateString()}</span>
                             </div>
@@ -210,7 +202,6 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Mock Interview List */}
                 {activeTab === 'mocks' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                         {mockInterviews?.length === 0 ? <p style={{ color: '#8b949e' }}>No mock interviews completed yet.</p> : null}
@@ -229,13 +220,11 @@ const Home = () => {
                                         <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>{mock.qaList?.length || 0} Questions Answered</span>
                                     </div>
                                     
-                                    {/* 🔥 NEW: Flexbox wrapper for Score AND Trash Icon */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ background: mock.totalScore >= 70 ? 'rgba(63, 185, 80, 0.2)' : 'rgba(210, 153, 34, 0.2)', color: mock.totalScore >= 70 ? '#3fb950' : '#d29922', padding: '10px', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.1rem', border: `2px solid ${mock.totalScore >= 70 ? '#3fb950' : '#d29922'}` }}>
                                             {mock.totalScore}
                                         </div>
 
-                                        {/* The Mock Delete Button */}
                                         <button 
                                             onClick={(e) => handleDeleteClick(e, mock._id, 'mock')}
                                             style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', padding: '4px', transition: 'color 0.2s' }}
@@ -246,14 +235,12 @@ const Home = () => {
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                         </button>
                                     </div>
-
                                 </div>
                                 <span style={{ color: '#8b949e', fontSize: '0.85rem', marginTop: 'auto' }}>{new Date(mock.createdAt).toLocaleDateString()}</span>
                             </div>
                         ))}
                     </div>
                 )}
-
             </div>
         </div>
     );

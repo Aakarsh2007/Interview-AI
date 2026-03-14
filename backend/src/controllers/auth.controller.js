@@ -2,9 +2,14 @@ const userModel = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { redisClient } = require("../config/redis");
-const sendEmail = require("../utils/sendEmail"); // Assuming this is the path based on your setup
+const sendEmail = require("../utils/sendEmail");
 
-// REGISTER
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+};
+
 async function registerUserController(req, res) {
     try {
         const { username, email, password } = req.body;
@@ -33,7 +38,6 @@ async function registerUserController(req, res) {
             password: hash
         });
 
-        // Use the standardized Access/Refresh token system
         const accessToken = jwt.sign(
             { id: user._id, username: user.username },
             process.env.ACCESS_TOKEN_SECRET,
@@ -46,17 +50,8 @@ async function registerUserController(req, res) {
             { expiresIn: "7d" }
         );
 
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: false, // Set to true if using HTTPS in production
-            sameSite: "lax"
-        });
-
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false, // Set to true if using HTTPS in production
-            sameSite: "lax"
-        });
+        res.cookie("accessToken", accessToken, cookieOptions);
+        res.cookie("refreshToken", refreshToken, cookieOptions);
 
         res.status(201).json({
             message: "User registered successfully",
@@ -74,7 +69,6 @@ async function registerUserController(req, res) {
     }
 }
 
-// LOGIN
 async function loginUserController(req, res) {
     try {
         const { email, password } = req.body;
@@ -113,15 +107,8 @@ async function loginUserController(req, res) {
             { expiresIn: "7d" }
         );
 
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            sameSite: "lax"
-        });
-
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            sameSite: "lax"
-        });
+        res.cookie("accessToken", accessToken, cookieOptions);
+        res.cookie("refreshToken", refreshToken, cookieOptions);
 
         res.status(200).json({
             message: "Login successful",
@@ -139,7 +126,6 @@ async function loginUserController(req, res) {
     }
 }
 
-// LOGOUT
 async function logoutUserController(req, res) {
     try {
         const token = req.cookies?.accessToken;
@@ -150,14 +136,12 @@ async function logoutUserController(req, res) {
             });
         }
 
-        // Blacklist the token for 15 minutes (900 seconds)
         await redisClient.set(token, "blacklisted", {
             EX: 900
         });
 
-        // Clear both cookies
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
 
         res.json({
             message: "Logged out successfully"
@@ -170,7 +154,6 @@ async function logoutUserController(req, res) {
     }
 }
 
-// GET ME
 async function getMeController(req, res) {
     try {
         const user = await userModel
@@ -178,7 +161,7 @@ async function getMeController(req, res) {
             .select("-password");
 
         if (!user) {
-             return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         res.json({ user });
@@ -190,7 +173,6 @@ async function getMeController(req, res) {
     }
 }
 
-// REFRESH TOKEN
 async function refreshTokenController(req, res) {
     const refreshToken = req.cookies?.refreshToken;
 
@@ -206,22 +188,18 @@ async function refreshTokenController(req, res) {
             process.env.REFRESH_TOKEN_SECRET
         );
 
-        // Security check: Ensure user still exists before issuing new access token
         const user = await userModel.findById(decoded.id);
         if (!user) {
-             return res.status(401).json({ message: "User no longer exists" });
+            return res.status(401).json({ message: "User no longer exists" });
         }
 
         const accessToken = jwt.sign(
-            { id: user._id, username: user.username }, // Included username to match initial generation
+            { id: user._id, username: user.username },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: "15m" }
         );
 
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            sameSite: "lax"
-        });
+        res.cookie("accessToken", accessToken, cookieOptions);
 
         res.json({
             message: "New access token generated"
@@ -233,7 +211,6 @@ async function refreshTokenController(req, res) {
     }
 }
 
-// FORGOT PASSWORD
 async function forgotPasswordController(req, res) {
     try {
         const { email } = req.body;
@@ -250,7 +227,7 @@ async function forgotPasswordController(req, res) {
         await redisClient.set(
             `otp:${email}`,
             otp,
-            { EX: 300 } // 5 minutes
+            { EX: 300 }
         );
 
         await sendEmail(email, "Password Reset OTP", `Your OTP is ${otp}`);
@@ -259,11 +236,10 @@ async function forgotPasswordController(req, res) {
             message: "OTP sent to email"
         });
     } catch (error) {
-         res.status(500).json({ message: "Server error", error: error.message });
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 
-// RESET PASSWORD
 async function resetPasswordController(req, res) {
     try {
         const { email, otp, newPassword } = req.body;
@@ -288,7 +264,7 @@ async function resetPasswordController(req, res) {
             message: "Password reset successful"
         });
     } catch (error) {
-         res.status(500).json({ message: "Server error", error: error.message });
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 

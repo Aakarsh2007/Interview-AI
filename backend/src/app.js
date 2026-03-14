@@ -1,21 +1,32 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const cors = require("cors")
+const cors = require("cors");
 
 const app = express();
 
-// 1. MIDDLEWARES MUST COME FIRST
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173"
+].filter(Boolean);
+
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true
-}))
-// 2. ROUTES COME SECOND
+}));
+
 const authRouter = require("./routes/auth.routes");
-const interviewRouter = require("./routes/interview.routes")
+const interviewRouter = require("./routes/interview.routes");
 
 app.use("/api/auth", authRouter);
-app.use("/api/interview", interviewRouter)
+app.use("/api/interview", interviewRouter);
 
 module.exports = app;

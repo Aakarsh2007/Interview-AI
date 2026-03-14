@@ -24,34 +24,26 @@ const MockInterviewArena = () => {
         }
     }, [interviewId]);
 
-    // 🔥 UPDATE: Mix 5 Technical and Behavioral questions randomly!
     useEffect(() => {
         if (report && report.technicalQuestions && report.behavioralQuestions) {
-            // 1. Combine both arrays
             const combined = [...report.technicalQuestions, ...report.behavioralQuestions];
-            
-            // 2. Shuffle them randomly
             const shuffled = combined.sort(() => 0.5 - Math.random());
-            
-            // 3. Take exactly 5 mixed questions for the arena
             setQuestions(shuffled.slice(0, 5));
         }
     }, [report]);
 
-    // 🔥 FAANG UX: TEXT-TO-SPEECH (AI Reads the Question)
     useEffect(() => {
         if (questions.length > 0 && !currentFeedback) {
             const currentQuestionText = questions[currentIndex].question;
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop any previous speech
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(currentQuestionText);
-                utterance.rate = 0.95; // Slightly professional pace
+                utterance.rate = 0.95;
                 window.speechSynthesis.speak(utterance);
             }
         }
     }, [currentIndex, questions, currentFeedback]);
 
-    // Speech-To-Text (User dictates answer)
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {

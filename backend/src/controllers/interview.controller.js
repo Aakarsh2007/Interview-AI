@@ -1,18 +1,14 @@
 const pdfParse = require("pdf-parse");
 const { generateInterviewReport, generateResumePdf, evaluateMockInterviewAnswer } = require("../services/ai.service");
 const interviewReportModel = require("../models/interviewReport.model");
-const mockInterviewModel = require("../models/mockInterview.model"); // 🔥 NEW IMPORT
+const mockInterviewModel = require("../models/mockInterview.model");
 
-/**
- * @description Controller to generate interview report based on user self description, resume and job description.
- */
 async function generateInterViewReportController(req, res) {
     try {
         const { selfDescription, jobDescription } = req.body;
         const hasFile = !!req.file;
         const hasSelfDescription = !!selfDescription && selfDescription.trim().length > 0;
 
-        // 1. Strict Validation Guards (FAANG Upgrade: "OR" Logic)
         if (!jobDescription) {
             return res.status(400).json({ message: "Job description is required." });
         }
@@ -21,7 +17,6 @@ async function generateInterViewReportController(req, res) {
             return res.status(400).json({ message: "Please provide either a Resume PDF or a Quick Self Description." });
         }
 
-        // 2. Safely parse the PDF ONLY if a file was uploaded
         let resumeContentText = "";
         if (hasFile) {
             if (typeof pdfParse === "function") {
@@ -38,20 +33,18 @@ async function generateInterViewReportController(req, res) {
             }
         }
 
-        // 3. Call the AI Service
         const interViewReportByAi = await generateInterviewReport({
             resume: resumeContentText,
             selfDescription,
             jobDescription
         });
 
-        // 4. Save to Database
         const interviewReport = await interviewReportModel.create({
             user: req.user.id,
             resume: resumeContentText,
             selfDescription,
             jobDescription,
-            title: interViewReportByAi.title || "Interview Report", // Fallback just in case
+            title: interViewReportByAi.title || "Interview Report",
             ...interViewReportByAi
         });
 
@@ -66,9 +59,6 @@ async function generateInterViewReportController(req, res) {
     }
 }
 
-/**
- * @description Controller to get interview report by interviewId.
- */
 async function getInterviewReportByIdController(req, res) {
     try {
         const { interviewId } = req.params;
@@ -89,8 +79,6 @@ async function getInterviewReportByIdController(req, res) {
     }
 }
 
-/** * @description Controller to get all interview reports of logged in user.
- */
 async function getAllInterviewReportsController(req, res) {
     try {
         const interviewReports = await interviewReportModel
@@ -108,9 +96,6 @@ async function getAllInterviewReportsController(req, res) {
     }
 }
 
-/**
- * @description Controller to generate resume PDF based on user self description, resume and job description.
- */
 async function generateResumePdfController(req, res) {
     try {
         const { interviewReportId } = req.params;
@@ -137,9 +122,6 @@ async function generateResumePdfController(req, res) {
     }
 }
 
-/**
- * @description Controller to delete a specific interview report.
- */
 async function deleteInterviewReportController(req, res) {
     try {
         const { id } = req.params;
@@ -160,9 +142,6 @@ async function deleteInterviewReportController(req, res) {
     }
 }
 
-/**
- * @description Controller to add/remove a specific task from the completedTasks array
- */
 async function toggleTaskCompletionController(req, res) {
     try {
         const { id } = req.params;
@@ -198,7 +177,6 @@ async function toggleTaskCompletionController(req, res) {
     }
 }
 
-// 🔥 NEW FAANG FEATURE: Evaluate an Answer using Gemini
 async function evaluateAnswerController(req, res) {
     try {
         const { question, userAnswer, jobTitle } = req.body;
@@ -207,7 +185,6 @@ async function evaluateAnswerController(req, res) {
             return res.status(400).json({ message: "Question, userAnswer, and jobTitle are required." });
         }
 
-        // Call the AI Service
         const evaluation = await evaluateMockInterviewAnswer({ question, userAnswer, jobTitle });
 
         res.status(200).json({ message: "Evaluation successful", evaluation });
@@ -217,7 +194,6 @@ async function evaluateAnswerController(req, res) {
     }
 }
 
-// 🔥 NEW FAANG FEATURE: Save the final Mock Interview to Database
 async function saveMockInterviewController(req, res) {
     try {
         const { interviewReportId, jobTitle, qaList, totalScore } = req.body;
@@ -244,12 +220,11 @@ async function saveMockInterviewController(req, res) {
     }
 }
 
-// 🔥 NEW FAANG FEATURE: Get all saved mock interviews for the dashboard
 async function getAllMockInterviewsController(req, res) {
     try {
         const mockInterviews = await mockInterviewModel
             .find({ user: req.user.id })
-            .sort({ createdAt: -1 }); // Newest first!
+            .sort({ createdAt: -1 });
 
         res.status(200).json({
             message: "Mock interviews fetched successfully.",
@@ -261,7 +236,6 @@ async function getAllMockInterviewsController(req, res) {
     }
 }
 
-// 🔥 NEW FAANG FEATURE: Delete a specific mock interview
 async function deleteMockInterviewController(req, res) {
     try {
         const { id } = req.params;
@@ -278,8 +252,6 @@ async function deleteMockInterviewController(req, res) {
     }
 }
 
-
-
 module.exports = {
     generateInterViewReportController,
     getInterviewReportByIdController,
@@ -287,8 +259,8 @@ module.exports = {
     generateResumePdfController,
     deleteInterviewReportController,
     toggleTaskCompletionController,
-    evaluateAnswerController, // Exported!
+    evaluateAnswerController,
     getAllMockInterviewsController,
     deleteMockInterviewController,
-    saveMockInterviewController // Exported!
+    saveMockInterviewController
 };

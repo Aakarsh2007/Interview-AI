@@ -73,7 +73,6 @@ const evaluationSchema = {
     required: ["score", "feedback"]
 };
 
-// 🔥 THE FIX: A Bulletproof JSON Parser that strips out AI Markdown
 function parseGeminiJSON(rawText) {
     let cleanText = rawText.trim();
     if (cleanText.startsWith("```json")) {
@@ -99,15 +98,14 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         Job Description: ${jobDescription || "General Software Engineer"}`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // 🔥 Restored to the correct, working model
+            model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: interviewResponseSchema, 
+                responseSchema: interviewResponseSchema
             }
         });
 
-        // 🔥 Using the safe parser
         const parsedResponse = parseGeminiJSON(response.text);
 
         console.log("=== SUCCESSFUL AI GENERATION ===");
@@ -130,7 +128,7 @@ async function generatePdfFromHtml(htmlContent) {
         await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
         const pdfBuffer = await page.pdf({
-            format: "A4", 
+            format: "A4",
             margin: { top: "20mm", bottom: "20mm", left: "15mm", right: "15mm" }
         });
 
@@ -155,7 +153,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                         Respond ONLY with a valid JSON object containing a single key "html" with the HTML string.`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // 🔥 Restored
+            model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -167,7 +165,6 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
             }
         });
 
-        // 🔥 Using the safe parser
         const jsonContent = parseGeminiJSON(response.text);
         const pdfBuffer = await generatePdfFromHtml(jsonContent.html);
 
@@ -188,15 +185,14 @@ async function evaluateMockInterviewAnswer({ question, userAnswer, jobTitle }) {
         Evaluate the candidate's answer. Be critical but fair. Provide a score out of 10 and specific feedback on what was good and what was missing.`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // 🔥 Restored
+            model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: evaluationSchema, 
+                responseSchema: evaluationSchema
             }
         });
 
-        // 🔥 Using the safe parser
         const parsedResponse = parseGeminiJSON(response.text);
         return parsedResponse;
 
@@ -209,5 +205,5 @@ async function evaluateMockInterviewAnswer({ question, userAnswer, jobTitle }) {
 module.exports = {
     generateInterviewReport,
     generateResumePdf,
-    evaluateMockInterviewAnswer 
+    evaluateMockInterviewAnswer
 };

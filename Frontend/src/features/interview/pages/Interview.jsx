@@ -82,7 +82,6 @@ const Interview = () => {
 
     const scoreColor = report.matchScore >= 80 ? 'score--high' : report.matchScore >= 60 ? 'score--mid' : 'score--low'
 
-    // 🔥 PROGRESS BAR MATH: Calculate total tasks vs completed tasks
     const totalTasks = report.preparationPlan?.reduce((acc, day) => acc + day.tasks.length, 0) || 0;
     const completedTasksCount = report.completedTasks?.length || 0;
     const progressPercent = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
@@ -91,8 +90,6 @@ const Interview = () => {
         <div className='interview-page'>
             <div className='interview-layout'>
                 
-                {/* ── Left Nav ── */}
-                {/* 🔥 FIX: Added display flex and flex-direction to force items to top */}
                 <nav className='interview-nav' style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ padding: '0 1rem 1.5rem 1rem' }}>
                         <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', padding: 0 }}>
@@ -100,7 +97,6 @@ const Interview = () => {
                         </button>
                     </div>
                     
-                    {/* 🔥 FIX: Added flex: 1 to push the download button to the bottom, keeping these top-aligned */}
                     <div className="nav-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: '0.5rem' }}>
                         <p className='interview-nav__label' style={{ marginBottom: '1rem', color: '#8b949e', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Sections</p>
                         {NAV_ITEMS.map(item => (
@@ -117,7 +113,6 @@ const Interview = () => {
 
                 <div className='interview-divider' />
 
-                {/* ── Center Content ── */}
                 <main className='interview-content'>
                     {activeNav === 'technical' && (
                         <section>
@@ -143,7 +138,6 @@ const Interview = () => {
                     )}
                     {activeNav === 'roadmap' && (
                         <section>
-                            {/* 🔥 THE NEW LIVE PROGRESS BAR */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Preparation Road Map</h2>
@@ -180,7 +174,6 @@ const Interview = () => {
 
                 <div className='interview-divider' />
 
-                {/* ── Right Sidebar ── */}
                 <aside className='interview-sidebar'>
                     <button
                         onClick={() => navigate(`/mock-interview/${report._id}`)} 

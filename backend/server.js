@@ -1,13 +1,16 @@
 require("dotenv").config();
-const app = require("./src/app"); // your express app
+const app = require("./src/app");
 const connectToDB = require("./src/config/database");
 const { connectRedis } = require("./src/config/redis");
 
-// Connect to DB and Redis
 connectToDB();
 connectRedis();
 
-// Start server
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
-});
+if (process.env.NODE_ENV !== "production") {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
+
+module.exports = app;

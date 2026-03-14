@@ -31,7 +31,6 @@ export async function login({ email, password }) {
 
 export async function logout() {
     try {
-        // Fixed: Changed from GET to POST
         const response = await api.post("/api/auth/logout")
         return response.data
     } catch (err) {
@@ -42,7 +41,6 @@ export async function logout() {
 
 export async function getMe() {
     try {
-        // Fixed: Changed from /get-me to /me
         const response = await api.get("/api/auth/me")
         return response.data
     } catch (err) {
@@ -50,8 +48,6 @@ export async function getMe() {
         throw err;
     }
 }
-
-// --- NEW FORGOT PASSWORD SERVICES ---
 
 export async function forgotPassword(email) {
     try {

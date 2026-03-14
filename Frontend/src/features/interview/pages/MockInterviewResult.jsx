@@ -5,10 +5,8 @@ const MockInterviewResult = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
     
-    // Catch the data passed from the Dashboard click!
     const mock = state?.mock;
 
-    // Security check: If someone tries to manually type the URL without clicking a card, send them home
     if (!mock) {
         return <Navigate to="/" />;
     }
@@ -18,7 +16,6 @@ const MockInterviewResult = () => {
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', color: '#e1e7ef', fontFamily: 'system-ui, sans-serif' }}>
             
-            {/* Header Area */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <button 
                     onClick={() => navigate('/')} 
@@ -30,7 +27,6 @@ const MockInterviewResult = () => {
                 <span style={{ color: '#8b949e' }}>Completed on {new Date(mock.createdAt).toLocaleDateString()}</span>
             </div>
 
-            {/* Scorecard Summary */}
             <div style={{ background: '#14171c', border: `1px solid ${scoreColor}`, borderRadius: '12px', padding: '2rem', marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: `0 0 20px ${scoreColor}20` }}>
                 <div style={{ width: '100px', height: '100px', borderRadius: '50%', border: `4px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: scoreColor }}>
                     {mock.totalScore}
@@ -41,14 +37,12 @@ const MockInterviewResult = () => {
                 </div>
             </div>
 
-            {/* Detailed Q&A Breakdown */}
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid #3c4453', paddingBottom: '0.5rem' }}>Detailed Breakdown</h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {mock.qaList.map((qa, index) => (
                     <div key={index} style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
                         
-                        {/* Question */}
                         <div style={{ background: '#1a1d24', padding: '1.5rem', borderBottom: '1px solid #30363d' }}>
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                                 <span style={{ color: '#ff2d78', fontWeight: 'bold', fontSize: '1.2rem' }}>Q{index + 1}</span>
@@ -56,7 +50,6 @@ const MockInterviewResult = () => {
                             </div>
                         </div>
 
-                        {/* Answers & Feedback */}
                         <div style={{ padding: '1.5rem' }}>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <span style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#a0aab8', marginBottom: '0.5rem', fontWeight: 'bold' }}>Your Answer:</span>

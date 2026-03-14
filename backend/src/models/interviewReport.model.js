@@ -83,14 +83,10 @@ const interviewReportSchema = new mongoose.Schema({
     behavioralQuestions: [ behavioralQuestionSchema ],
     skillGaps: [ skillGapSchema ],
     preparationPlan: [ preparationPlanSchema ],
-    
-    // 🔥 NEW FAANG FEATURE: ROADMAP TRACKER
-    // Stores the exact string of the tasks the user has checked off.
     completedTasks: {
         type: [ String ],
         default: []
     },
-
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users"

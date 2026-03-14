@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Schema for individual Question & Answer pairs
 const qaSchema = new mongoose.Schema({
     question: { 
         type: String, 
@@ -30,14 +29,13 @@ const mockInterviewSchema = new mongoose.Schema({
         ref: "users",
         required: true
     },
-    // We link this mock interview directly to the strategy it was generated from!
     interviewReport: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "InterviewReport",
         required: true
     },
     jobTitle: {
-        type: String, // E.g., "Frontend Engineer at Google"
+        type: String,
         required: true
     },
     totalScore: {

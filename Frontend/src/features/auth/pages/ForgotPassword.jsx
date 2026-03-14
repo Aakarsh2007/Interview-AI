@@ -9,7 +9,6 @@ const ForgotPassword = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Form Data
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -20,7 +19,7 @@ const ForgotPassword = () => {
         setError("");
         try {
             await forgotPassword(email);
-            setStep(2); // Move to the OTP screen
+            setStep(2);
         } catch (err) {
             setError(err.response?.data?.message || "Failed to send OTP. Check email and try again.");
         } finally {
