@@ -1,9 +1,9 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", 
-    port: 465,
-    secure: true,
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -23,9 +23,8 @@ async function sendEmail(to, subject, text) {
         return info;
     } catch (error) {
         console.error("NODEMAILER CRITICAL ERROR:", error);
-        throw error; 
+        throw error;
     }
 }
 
 module.exports = sendEmail;
-
