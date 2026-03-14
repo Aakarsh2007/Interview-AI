@@ -46,7 +46,6 @@ export const router = createBrowserRouter([
         )
     },
     {
-        // 🔥 NEW ROUTE FOR MOCK RESULTS
         path: "/mock-result",
         element: (
             <Protected>
