@@ -2,17 +2,25 @@
 # 🚀 Interview-AI: Intelligent Strategy & Mock Interview Platform
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Frontend-React_19-blue?logo=react&logoColor=white" alt="React" />
-  <img src="https://img.shields.io/badge/Backend-Node.js-green?logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/API-Express-black?logo=express&logoColor=white" alt="Express" />
-  <img src="https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Cache-Redis-DC382D?logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/AI-Google_Gemini-8E75B2?logo=googlebard&logoColor=white" alt="Gemini" />
-  <img src="https://img.shields.io/badge/Auth-JWT-yellow?logo=jsonwebtokens&logoColor=white" alt="JWT" />
+  <em>An enterprise-grade, full-stack AI application designed to analyze resumes, generate tailored preparation roadmaps, and conduct live, voice-enabled technical mock interviews.</em>
 </p>
 
 <p align="center">
-  <em>An enterprise-grade, full-stack AI application designed to analyze resumes, generate tailored preparation roadmaps, and conduct live, voice-enabled technical mock interviews.</em>
+  <strong>Frontend Architecture</strong><br>
+  <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <br><br>
+  <strong>Backend & API</strong><br>
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
+  <br><br>
+  <strong>Database & Caching</strong><br>
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <br><br>
+  <strong>AI & Security</strong><br>
+  <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white" alt="Gemini" />
+  <img src="https://img.shields.io/badge/JWT_Auth-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white" alt="JWT" />
 </p>
 
 ---
@@ -28,25 +36,25 @@
 Upload your resume (PDF) and target job description. The AI parses the data to calculate match scores and skill gaps.
 <p align="center"><img src="screenshots/home.png" width="900" alt="Main Dashboard"/></p>
 
-### 🗺️ AI Strategy & Day-by-Day Roadmap
-Generates a highly tailored, interactive preparation roadmap. Check off daily tasks as your dynamic progress bar updates in real-time.
+### 🗺️ AI Strategy, Roadmap & Preparation Questions
+Generates a highly tailored, interactive preparation roadmap based on your exact skill gaps. Includes customized technical and behavioural questions to guide your preparation.
 <p align="center"><img src="screenshots/roadmap.png" width="900" alt="Interactive Roadmap"/></p>
-<p align="center"><img src="screenshots/report.png" width="900" alt="Strategy Report"/></p>
+<p align="center">
+  <img src="screenshots/technical.png" width="445" alt="Technical Questions"/>
+  <img src="screenshots/behavioural.png" width="445" alt="Behavioural Questions"/>
+</p>
 
 ### 🎙️ Live AI Mock Interview Arena (Voice-Enabled)
-Practice under pressure. The AI reads questions aloud using native Web Speech Synthesis. Dictate your answers using Speech-to-Text without touching your keyboard.
-<p align="center">
-  <img src="screenshots/mock-interview.png" width="445" alt="Mock Arena"/>
-  <img src="screenshots/technical.png" width="445" alt="Technical Questions"/>
-</p>
-<p align="center"><img src="screenshots/behavioural.png" width="900" alt="Behavioural Questions"/></p>
+Practice under pressure. The AI generates a custom mix of questions, reads them aloud using native Web Speech Synthesis, and allows you to dictate your answers seamlessly without touching your keyboard.
+<p align="center"><img src="screenshots/mock-interview.png" width="900" alt="Mock Arena"/></p>
 
-### 📊 Instant AI Grading & Feedback Scorecards
-Receive an instant grade (out of 10) on your verbal answers with actionable feedback on what you missed.
+### 📊 Instant AI Grading & Detailed Reports
+Once the interview concludes, receive an instant grade (out of 10) on your verbal answers, complete with actionable feedback and a comprehensive scorecard.
+<p align="center"><img src="screenshots/report.png" width="900" alt="Strategy Report"/></p>
 <p align="center"><img src="screenshots/mock-feedback.png" width="900" alt="Mock Feedback"/></p>
 
-### 📜 Persistent History & PDF Generation
-Track your progress over time. Instantly render AI-generated HTML into a clean, downloadable A4 PDF resume using a headless Chrome browser (Puppeteer).
+### 📜 Persistent History
+Track your progress over time. View all past mock interviews and generated strategies in one centralized location.
 <p align="center"><img src="screenshots/history.png" width="900" alt="Interview History"/></p>
 
 ---
@@ -94,7 +102,7 @@ Features a robust, stateless JWT authentication flow with an enterprise-grade pa
        ├─▶ [ Puppeteer ] (Headless PDF Rendering)
        │
        ▼ 
-[ Google Gemini 2.5 Flash SDK ] (Code Parsing, AI Strategy & Grading)
+[ Google Gemini 2.5 Flash SDK ] (Data Parsing, AI Strategy & Grading)
 
 ```
 
@@ -212,10 +220,12 @@ Navigate to `http://localhost:5173` in your browser.
 
 ## 👨‍💻 Author
 
-**Aakarsh Saxena** *Full Stack Developer & IT Undergrad* *B.Tech in Information Technology | Indian Institute of Information Technology (IIIT), Lucknow*
+**Aakarsh Saxena** *Aspiring AI Engineer & Full Stack Developer* *B.Tech in Information Technology | IIIT Lucknow*
 
 ---
 
 ## ⭐ Support
 
 If you found this project helpful or inspiring, please consider leaving a ⭐ on the repository!
+
+
