@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://interview-ai-backend-z9lt.onrender.com",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000",
     withCredentials: true
 });
 
-export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }: { jobDescription: string, selfDescription: string, resumeFile: File | null }) => {
     const formData = new FormData();
     formData.append("jobDescription", jobDescription);
     formData.append("selfDescription", selfDescription);
@@ -22,7 +22,7 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     return response.data;
 };
 
-export const getInterviewReportById = async (interviewId) => {
+export const getInterviewReportById = async (interviewId: string) => {
     const response = await api.get(`/api/interview/report/${interviewId}`);
     return response.data;
 };
@@ -32,29 +32,29 @@ export const getAllInterviewReports = async () => {
     return response.data;
 };
 
-export const generateResumePdf = async ({ interviewReportId }) => {
+export const generateResumePdf = async ({ interviewReportId }: { interviewReportId: string }) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
         responseType: "blob"
     });
     return response.data;
 };
 
-export const deleteInterviewReport = async (id) => {
+export const deleteInterviewReport = async (id: string) => {
     const response = await api.delete(`/api/interview/${id}`);
     return response.data;
 };
 
-export const toggleTaskCompletion = async (id, taskString) => {
+export const toggleTaskCompletion = async (id: string, taskString: string) => {
     const response = await api.patch(`/api/interview/${id}/task`, { taskString });
     return response.data;
 };
 
-export const evaluateMockAnswer = async ({ question, userAnswer, jobTitle }) => {
+export const evaluateMockAnswer = async ({ question, userAnswer, jobTitle }: { question: string, userAnswer: string, jobTitle: string }) => {
     const response = await api.post("/api/interview/mock/evaluate", { question, userAnswer, jobTitle });
     return response.data;
 };
 
-export const saveMockInterview = async ({ interviewReportId, jobTitle, qaList, totalScore }) => {
+export const saveMockInterview = async ({ interviewReportId, jobTitle, qaList, totalScore }: { interviewReportId: string, jobTitle: string, qaList: any[], totalScore: number }) => {
     const response = await api.post("/api/interview/mock/save", { interviewReportId, jobTitle, qaList, totalScore });
     return response.data;
 };
@@ -64,7 +64,7 @@ export const getAllMockInterviews = async () => {
     return response.data;
 };
 
-export const deleteMockInterview = async (id) => {
+export const deleteMockInterview = async (id: string) => {
     const response = await api.delete(`/api/interview/mock/${id}`);
     return response.data;
 };

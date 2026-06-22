@@ -48,6 +48,34 @@ const skillGapSchema = new mongoose.Schema({
     _id: false
 })
 
+const resourceSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: [ true, "Resource title is required" ]
+    },
+    url: {
+        type: String,
+        required: [ true, "Resource URL or search term is required" ]
+    },
+    type: {
+        type: String,
+        enum: [ "video", "article", "docs", "practice" ],
+        required: [ true, "Resource type is required" ]
+    }
+}, {
+    _id: false
+})
+
+const taskSchema = new mongoose.Schema({
+    text: {
+        type: String,
+        required: [ true, "Task text is required" ]
+    },
+    resources: [ resourceSchema ]
+}, {
+    _id: false
+})
+
 const preparationPlanSchema = new mongoose.Schema({
     day: {
         type: Number,
@@ -57,10 +85,7 @@ const preparationPlanSchema = new mongoose.Schema({
         type: String,
         required: [ true, "Focus is required" ]
     },
-    tasks: [ {
-        type: String,
-        required: [ true, "Task is required" ]
-    } ]
+    tasks: [ taskSchema ]
 })
 
 const interviewReportSchema = new mongoose.Schema({
@@ -84,6 +109,14 @@ const interviewReportSchema = new mongoose.Schema({
     skillGaps: [ skillGapSchema ],
     preparationPlan: [ preparationPlanSchema ],
     completedTasks: {
+        type: [ String ],
+        default: []
+    },
+    atsKeywordsMissing: {
+        type: [ String ],
+        default: []
+    },
+    atsSuggestedBullets: {
         type: [ String ],
         default: []
     },

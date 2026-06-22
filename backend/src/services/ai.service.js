@@ -54,14 +54,42 @@ const interviewResponseSchema = {
                     focus: { type: "string" },
                     tasks: {
                         type: "array",
-                        items: { type: "string" }
+                        items: {
+                            type: "object",
+                            properties: {
+                                text: { type: "string", description: "The task action item description" },
+                                resources: {
+                                    type: "array",
+                                    items: {
+                                        type: "object",
+                                        properties: {
+                                            title: { type: "string", description: "Title of the learning resource (e.g. 'React docs: useState')" },
+                                            url: { type: "string", description: "A high-quality documentation URL, youtube query link, or practice problem link" },
+                                            type: { type: "string", enum: ["video", "article", "docs", "practice"] }
+                                        },
+                                        required: ["title", "url", "type"]
+                                    }
+                                }
+                            },
+                            required: ["text", "resources"]
+                        }
                     }
                 },
                 required: ["day", "focus", "tasks"]
             }
+        },
+        atsKeywordsMissing: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of 5-10 key technical skills, libraries, or methodologies from the JD that are missing or weak in the resume context"
+        },
+        atsSuggestedBullets: {
+            type: "array",
+            items: { type: "string" },
+            description: "3-5 high-impact resume accomplishment bullet points integrating missing keywords using action verb + metric formatting"
         }
     },
-    required: ["title", "matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan"]
+    required: ["title", "matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan", "atsKeywordsMissing", "atsSuggestedBullets"]
 };
 
 const evaluationSchema = {
@@ -92,6 +120,12 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         Generate a comprehensive interview preparation report based on the provided candidate details.
         
         CRITICAL INSTRUCTION: You MUST generate EXACTLY 5 technical questions and EXACTLY 5 behavioral questions. Do not generate more or less.
+        
+        For each task in the preparationPlan, you must generate 1 or 2 specific learning resources. The resources must have realistic URLs (e.g., specific YouTube search URLs like 'https://www.youtube.com/results?search_query=...' or MDN docs URLs, or React/Python official docs, or LeetCode problem search links for practice).
+        
+        ATS Analysis:
+        - Identify 5-10 key technical terms, frameworks, or methodologies present in the Job Description that are missing or weak in the candidate's Resume Context. Put these in 'atsKeywordsMissing'.
+        - Suggest 3-5 high-impact resume accomplishment bullet points that integrate these missing keywords. Use the 'action verb + task + quantified result' (e.g. Google X-Y-Z formula) format. Put these in 'atsSuggestedBullets'.
         
         Resume Context: ${resume || "Not provided."}
         Self Description: ${selfDescription || "Not provided."}

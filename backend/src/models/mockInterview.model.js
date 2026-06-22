@@ -18,6 +18,13 @@ const qaSchema = new mongoose.Schema({
         required: true, 
         min: 0, 
         max: 10 
+    },
+    durationSeconds: {
+        type: Number
+    },
+    isSpoken: {
+        type: Boolean,
+        default: false
     }
 }, {
     _id: false
