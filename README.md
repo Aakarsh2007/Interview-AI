@@ -1,7 +1,7 @@
 # 🚀 Interview-AI: Intelligent Strategy & Mock Interview Platform
 
 <p align="center">
-  <em>An enterprise-grade, full-stack AI application designed to analyze resumes, generate tailored preparation roadmaps, and conduct live, voice-enabled technical mock interviews.</em>
+  <em>An enterprise-grade, production-ready AI application designed to analyze resumes, generate tailored preparation roadmaps, and conduct live, voice-enabled technical mock interviews with adaptive difficulty and real-time delivery analytics.</em>
 </p>
 
 <p align="center">
@@ -12,14 +12,17 @@
   <br><br>
   <strong>Backend & API</strong><br>
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
   <br><br>
   <strong>Database & Caching</strong><br>
-  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/MongoDB_Atlas-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Redis_Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
   <br><br>
   <strong>AI & Security</strong><br>
   <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white" alt="Gemini" />
+  <img src="https://img.shields.io/badge/Zod_Validation-3E67B1?style=for-the-badge&logo=zod&logoColor=white" alt="Zod" />
+  <img src="https://img.shields.io/badge/Helmet_Security-000000?style=for-the-badge&logo=express&logoColor=white" alt="Helmet" />
   <img src="https://img.shields.io/badge/JWT_Auth-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white" alt="JWT" />
 </p>
 
@@ -60,7 +63,7 @@ Track your progress over time. View all past mock interviews and generated strat
 ---
 
 ## 🔐 Secure Authentication Architecture
-Features a robust, stateless JWT authentication flow with an enterprise-grade password recovery system.
+Features a robust, cookie-based JWT authentication flow with an enterprise-grade password recovery system.
 
 <p align="center">
   <img src="screenshots/login.png" width="220" alt="Login"/>
@@ -79,11 +82,12 @@ Features a robust, stateless JWT authentication flow with an enterprise-grade pa
 
 ## ✨ Standout Elite Features
 
-* **🛡️ TypeScript Migration:** Full transition to TypeScript in the frontend for robust compilation and type-safety across API payloads, context states, and component bindings.
-* **🎯 ATS Resume Optimizer:** Evaluates Job Descriptions against your resume to list missing keywords and generate targeted, copy-ready accomplishment bullets based on Google's X-Y-Z formula.
-* **📈 Speech Pacing & Delivery Analytics:** Computes live spoken Words Per Minute (WPM) and detects speech filler words ("um", "like", "actually") during the interview dictation.
-* **🎓 Roadmap Contextual Resources:** Integrates direct learning resources (YouTube search query links, official documentation, practice challenges) mapped to each skill roadmap task.
-* **🗣️ Voice-Enabled Arena:** Utilizes the browser-native Web Speech API for seamless Text-to-Speech and Speech-to-Text interaction.
+* **🛡️ End-to-End TypeScript Migration:** The entire codebase has been converted to TypeScript, providing compile-time type-safety across all components, API schemas, Express requests, and database models.
+* **🎯 Zod Schema Validation & Helmet:** Strict HTTP request body schema checks using Zod and secure response header configuration with Helmet to defend against XSS and clickjacking.
+* **⚡ Redis AI Caching:** Integrates Upstash Redis caching for expensive AI generation calls, drastically reducing mock session latency and cost.
+* **🧠 Adaptive AI Questioning:** Rather than reading a static list of questions, the mock arena fetches questions dynamically from `/api/interview/mock/next-question`. The AI automatically selects a harder question if the candidate scores $\ge 7$, or a foundational/easier question if they score $< 5$.
+* **🎙️ Live Audio Pacing & Delivery Analytics:** Features real-time Web Audio API voice visualizers, WPM pace tracking, filler word detection, hesitation calculations, and candidate confidence metrics.
+* **🗣️ Voice-Enabled Arena & Interruption Handler:** Uses native Speech Recognition and Speech Synthesis. Utterances are automatically canceled immediately if the user starts speaking over the AI voice.
 * **📄 Automated PDF Generation:** Uses `puppeteer` to dynamically render AI-generated strategies into downloadable PDFs.
 
 ---
@@ -94,17 +98,16 @@ Features a robust, stateless JWT authentication flow with an enterprise-grade pa
 [ Frontend (React 19 + TypeScript + Vite) ] 
        │ (Axios + Credentials)
        ▼ 
-[ Backend (Node.js + Express) ] ──▶ [ Redis ] (Fast OTP & Session TTL)
+[ Backend (Express + TypeScript) ] ──▶ [ Redis Cache ] (Upstash Session Cache)
        │
-       ├─▶ [ MongoDB ] (User Data & Interview Scorecards)
+       ├─▶ [ MongoDB Atlas ] (Persistent Profiles & Interview History)
        │
-       ├─▶ [ Resend API ] (Secure HTTP Email Delivery)
+       ├─▶ [ Resend API ] (Secure SMTP Email Delivery)
        │
        ├─▶ [ Puppeteer ] (Headless PDF Rendering)
        │
        ▼ 
-[ Google Gemini 2.5 Flash SDK ] (Data Parsing, AI Strategy & Grading)
-
+[ Google Gemini 2.5 Flash SDK ] (Adaptive Questioning & Response Grading)
 ```
 
 ---
@@ -139,11 +142,29 @@ Interview-AI/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
+│   │   │   ├── database.ts
+│   │   │   └── redis.ts
 │   │   ├── controllers/
+│   │   │   ├── auth.controller.ts
+│   │   │   └── interview.controller.ts
+│   │   ├── middlewares/
+│   │   │   ├── auth.middleware.ts
+│   │   │   ├── file.middleware.ts
+│   │   │   └── rateLimit.middleware.ts
 │   │   ├── models/
+│   │   │   ├── interviewReport.model.ts
+│   │   │   ├── mockInterview.model.ts
+│   │   │   └── user.model.ts
 │   │   ├── routes/
-│   │   └── services/ai.service.js
-│   ├── server.js
+│   │   │   ├── auth.routes.ts
+│   │   │   └── interview.routes.ts
+│   │   ├── services/
+│   │   │   └── ai.service.ts
+│   │   ├── utils/
+│   │   │   └── sendEmail.ts
+│   │   ├── app.ts
+│   │   └── server.ts
+│   ├── tsconfig.json
 │   └── package.json
 └── screenshots/
 ```
@@ -201,38 +222,35 @@ Navigate to `http://localhost:5173` in your browser.
 Deploying a multi-service setup requiring Redis caching and Puppeteer PDF generation needs careful environment and database setup. Here is how to configure it in production:
 
 ### 1. Database Provisioning
-* **MongoDB**: Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas). Whitelist all connection IPs (`0.0.0.0/0`) and grab your connection string.
-* **Redis**: Provision a secure serverless database on [Upstash Redis](https://upstash.com/). Copy the connection string (`rediss://...`).
+* **MongoDB**: Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas). Whitelist all connection IPs (`0.0.0.0/0`) and copy your connection string.
+* **Redis**: Provision a secure serverless database on [Upstash Redis](https://upstash.com/). Copy the TLS-enabled connection string (`rediss://...`).
 
-### 2. Backend API Deployment (e.g., Render, Railway, or VPS)
-Since the backend uses **Puppeteer** for PDF generation, standard hosting requires additional system libraries:
-* **Option A: Railway (Recommended)**
-  * Create a new project, link your GitHub repository, and select the `/backend` folder.
-  * Railway will automatically run `npm start`.
-  * Add env variables (see below).
-* **Option B: Render**
-  * Create a new **Web Service**, link your repository, and set the root directory to `backend`.
-  * In **Settings**, under **Docker / Environment**, make sure you are using Node.js.
-  * In the **Build Command**, use `npm install`.
-  * Add the Puppeteer Chrome buildpack/dependencies if choosing custom OS stacks, or use a Dockerfile.
-* **Backend Env Variables (Production)**:
+### 2. Backend API Deployment on Railway
+Since the backend uses **Puppeteer** for PDF generation, Railway is highly recommended as it handles headless Chrome dependencies automatically via Nixpacks.
+* Log in to [Railway](https://railway.app/).
+* Click **New Project** $\rightarrow$ **Deploy from GitHub repo** and select `Interview-AI`.
+* In settings, configure the **Root Directory** as `backend`.
+* Under the **Variables** tab, add the following production variables:
   ```env
-  PORT=10000
+  PORT=3000
   MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/prod
   REDIS_URL=rediss://default:<password>@<upstash-endpoint>.upstash.io:6379
   JWT_SECRET=production_random_jwt_hash_string
-  GOOGLE_GENAI_API_KEY=your_gemini_api_key
-  RESEND_API_KEY=your_resend_api_key
+  ACCESS_TOKEN_SECRET=production_access_token_secret
+  REFRESH_TOKEN_SECRET=production_refresh_token_secret
+  GOOGLE_GENAI_API_KEY=your_production_gemini_api_key
+  RESEND_API_KEY=your_production_resend_api_key
   FRONTEND_URL=https://your-frontend-domain.vercel.app
   ```
 
-### 3. Frontend Deployment (e.g., Vercel, Netlify, or Render Static Sites)
-* **Vercel Setup**:
-  * Connect your GitHub, select the repository, and set the Root Directory to `Frontend`.
-  * Select the framework preset as **Vite**.
-  * Add Environment Variable:
-    * `VITE_API_BASE_URL` = `https://your-backend-api.onrender.com` (Point to your live backend endpoint).
-  * Deploy. Vercel automatically compiles your TypeScript and hosts the static files on an edge CDN.
+### 3. Frontend Deployment on Vercel
+* Log in to [Vercel](https://vercel.com/).
+* Click **Add New** $\rightarrow$ **Project**, link your GitHub account, and select the `Interview-AI` repository.
+* Configure the **Root Directory** to `Frontend`.
+* Keep the Framework Preset as **Vite**.
+* Add the following Environment Variable:
+  * `VITE_API_BASE_URL` = `https://your-backend-api.up.railway.app` (Your live backend endpoint).
+* Click **Deploy**. Vercel automatically compiles your TypeScript application and hosts the static bundle on their global Edge CDN.
 
 ---
 
