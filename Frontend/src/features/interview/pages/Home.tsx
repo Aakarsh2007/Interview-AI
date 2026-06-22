@@ -25,6 +25,11 @@ const Home: React.FC = () => {
     const [selfDescription, setSelfDescription] = useState('');
     const [resumeFile, setResumeFile] = useState<File | null>(null);
 
+    // Modern custom tracking params
+    const [role, setRole] = useState('Software Engineer');
+    const [company, setCompany] = useState('General');
+    const [experienceLevel, setExperienceLevel] = useState('Mid-Level');
+
     const [activeTab, setActiveTab] = useState<'strategies' | 'mocks' | 'analytics'>('strategies');
     const [mockInterviews, setMockInterviews] = useState<MockInterview[]>([]);
 
@@ -40,7 +45,7 @@ const Home: React.FC = () => {
                 setMockInterviews(res.mockInterviews);
             }
         } catch (error) {
-            console.error("Failed to fetch mock interviews");
+            console.error('Failed to fetch mock interviews');
         }
     };
 
@@ -48,13 +53,20 @@ const Home: React.FC = () => {
         e.preventDefault();
 
         if (!jobDescription.trim()) {
-            return toast.error("Job Description is required!");
+            return toast.error('Job Description is required!');
         }
         if (!selfDescription.trim() && !resumeFile) {
-            return toast.error("Please provide either a Resume PDF or a Self Description!");
+            return toast.error('Please provide either a Resume PDF or a Self Description!');
         }
 
-        const report = await generateReport({ jobDescription, selfDescription, resumeFile });
+        const report = await generateReport({ 
+            jobDescription, 
+            selfDescription, 
+            resumeFile,
+            role,
+            company,
+            experienceLevel
+        });
         if (report) {
             navigate(`/interview/${report._id}`);
         }
@@ -64,10 +76,10 @@ const Home: React.FC = () => {
         try {
             await handleLogout();
             localStorage.clear();
-            toast.success("Logged out successfully");
+            toast.success('Logged out successfully');
             navigate('/login');
         } catch (error) {
-            toast.error("Logout failed.");
+            toast.error('Logout failed.');
         }
     };
 
@@ -90,9 +102,9 @@ const Home: React.FC = () => {
                                 try {
                                     await deleteMockInterview(id);
                                     setMockInterviews(prev => prev.filter(m => m._id !== id));
-                                    toast.success("Mock interview deleted.");
+                                    toast.success('Mock interview deleted.');
                                 } catch (error) {
-                                    toast.error("Failed to delete mock interview.");
+                                    toast.error('Failed to delete mock interview.');
                                 }
                             }
                         }}
@@ -143,6 +155,54 @@ const Home: React.FC = () => {
                             placeholder="Paste the job description here..."
                             rows={4}
                         />
+                    </div>
+
+                    {/* Track Selection Parameters */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                        <div className="form-group">
+                            <label>Target Role / Focus Track</label>
+                            <select 
+                                value={role} 
+                                onChange={(e) => setRole(e.target.value)}
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', padding: '10px 14px', borderRadius: '8px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                            >
+                                <option value="Software Engineer">Software Engineer (General)</option>
+                                <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+                                <option value="AI Architect">AI Architect</option>
+                                <option value="DevOps Engineer">DevOps Engineer</option>
+                                <option value="Product Manager">Product Manager</option>
+                                <option value="Data Analyst">Data Analyst</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Target Company Match</label>
+                            <select 
+                                value={company} 
+                                onChange={(e) => setCompany(e.target.value)}
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', padding: '10px 14px', borderRadius: '8px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                            >
+                                <option value="General">General / Standard</option>
+                                <option value="Google">Google</option>
+                                <option value="Amazon">Amazon</option>
+                                <option value="Microsoft">Microsoft</option>
+                                <option value="Meta">Meta</option>
+                                <option value="Apple">Apple</option>
+                                <option value="Netflix">Netflix</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Experience Level</label>
+                            <select 
+                                value={experienceLevel} 
+                                onChange={(e) => setExperienceLevel(e.target.value)}
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', padding: '10px 14px', borderRadius: '8px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                            >
+                                <option value="Junior">Junior (0-2 Yrs)</option>
+                                <option value="Mid-Level">Mid-Level (2-5 Yrs)</option>
+                                <option value="Senior">Senior (5-8 Yrs)</option>
+                                <option value="Staff/Principal">Staff/Principal (8+ Yrs)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="split-row">
@@ -273,7 +333,7 @@ const Home: React.FC = () => {
                 )}
 
                 {activeTab === 'analytics' && (
-                    <MockAnalytics mocks={mockInterviews} strategies={reports || []} />
+                    <MockAnalytics />
                 )}
             </div>
         </div>

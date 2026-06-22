@@ -3,23 +3,18 @@ import { useParams, useNavigate } from 'react-router';
 import { useInterview } from '../hooks/useInterview';
 import toast from 'react-hot-toast';
 
-interface Question {
-  question: string;
-}
-
-interface Report {
-  _id: string;
-  title: string;
-  technicalQuestions: Question[];
-  behavioralQuestions: Question[];
+interface QuestionObj {
+    question: string;
+    expectedKeywords?: string[];
+    intention?: string;
 }
 
 const MockInterviewArena: React.FC = () => {
     const { interviewId } = useParams<{ interviewId: string }>();
     const navigate = useNavigate();
-    const { report, getReportById, evaluateAnswer, submitMockInterview, loading } = useInterview();
+    const { report, getReportById, evaluateAnswer, submitMockInterview, fetchNextQuestion, loading } = useInterview();
 
-    const [questions, setQuestions] = useState<Question[]>([]);
+    const [currentQuestion, setCurrentQuestion] = useState<QuestionObj | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [userAnswer, setUserAnswer] = useState('');
     const [isEvaluating, setIsEvaluating] = useState(false);
@@ -39,27 +34,52 @@ const MockInterviewArena: React.FC = () => {
     const [timerConfig, setTimerConfig] = useState<number | 'off'>(90);
     const [timeLeft, setTimeLeft] = useState(90);
 
+    // Microphone Visualizer
+    const [micVolume, setMicVolume] = useState(0);
+    const [micActive, setMicActive] = useState(false);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+
     // Delivery Analytics Refs
     const recordStartRef = useRef<number | null>(null);
     const currentDurationRef = useRef<number>(0);
     const isSpokenRef = useRef<boolean>(false);
 
+    // Fetch dynamic question on start & when index changes
     useEffect(() => {
         if (!report && interviewId) {
             getReportById(interviewId);
         }
     }, [interviewId]);
 
+    // Load first question when report metadata is fetched
     useEffect(() => {
-        if (report) {
-            const typedReport = report as Report;
-            if (typedReport.technicalQuestions && typedReport.behavioralQuestions) {
-                const combined = [...typedReport.technicalQuestions, ...typedReport.behavioralQuestions];
-                const shuffled = combined.sort(() => 0.5 - Math.random());
-                setQuestions(shuffled.slice(0, 5));
-            }
+        if (report && !currentQuestion) {
+            loadNextQuestion(0, []);
         }
     }, [report]);
+
+    const loadNextQuestion = async (index: number, pastQAs: any[]) => {
+        if (!report) return;
+        setIsEvaluating(true);
+        const nextQ = await fetchNextQuestion({
+            jobTitle: (report as any).title || 'Software Engineer',
+            pastQuestions: pastQAs,
+            questionIndex: index + 1
+        });
+        if (nextQ) {
+            setCurrentQuestion(nextQ);
+            setCurrentIndex(index);
+        } else {
+            // Fallback to static questions
+            const fallbackList = [...((report as any).technicalQuestions || []), ...((report as any).behavioralQuestions || [])];
+            if (fallbackList.length > index) {
+                setCurrentQuestion(fallbackList[index]);
+                setCurrentIndex(index);
+            }
+        }
+        setIsEvaluating(false);
+    };
 
     // Load Web Speech Synthesis Voices
     useEffect(() => {
@@ -75,8 +95,8 @@ const MockInterviewArena: React.FC = () => {
 
     // Text to Speech Effect
     useEffect(() => {
-        if (questions.length > 0 && !currentFeedback && !isPaused) {
-            const currentQuestionText = questions[currentIndex].question;
+        if (currentQuestion && !currentFeedback && !isPaused) {
+            const currentQuestionText = currentQuestion.question;
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(currentQuestionText);
@@ -88,7 +108,7 @@ const MockInterviewArena: React.FC = () => {
                 window.speechSynthesis.speak(utterance);
             }
         }
-    }, [currentIndex, questions, currentFeedback, voiceRate, selectedVoiceName, availableVoices, isPaused]);
+    }, [currentIndex, currentQuestion, currentFeedback, voiceRate, selectedVoiceName, availableVoices, isPaused]);
 
     // Timer Effect
     useEffect(() => {
@@ -99,7 +119,7 @@ const MockInterviewArena: React.FC = () => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    toast.error("Time is up! auto-evaluating response.");
+                    toast.error('Time is up! auto-evaluating response.');
                     handleTimeoutSubmit();
                     return 0;
                 }
@@ -108,9 +128,9 @@ const MockInterviewArena: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [currentIndex, currentFeedback, timerConfig, isPaused]);
+    }, [currentIndex, currentQuestion, currentFeedback, timerConfig, isPaused]);
 
-    // Speech Recognition Setup
+    // Speech Recognition Setup with interruption trigger
     useEffect(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -119,16 +139,24 @@ const MockInterviewArena: React.FC = () => {
             recognition.interimResults = true;
             recognition.lang = 'en-US';
 
+            recognition.onstart = () => {
+                // Interruption handling: cancel AI speaking when candidate starts responding
+                if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                    toast('Interrupted AI question to capture answer', { icon: '⚡' });
+                }
+            };
+
             recognition.onresult = (event: any) => {
                 let currentTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     currentTranscript += event.results[i][0].transcript;
                 }
-                setUserAnswer((prev) => prev + " " + currentTranscript);
+                setUserAnswer((prev) => prev + ' ' + currentTranscript);
             };
 
             recognition.onerror = (event: any) => {
-                console.error("Speech Recognition Error:", event.error);
+                console.error('Speech Recognition Error:', event.error);
                 setIsRecording(false);
             };
 
@@ -136,10 +164,60 @@ const MockInterviewArena: React.FC = () => {
         }
     }, []);
 
+    // Web Audio Analyzer for mic level check
+    const startMicAnalyzer = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream;
+            
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = audioCtx;
+            
+            const analyser = audioCtx.createAnalyser();
+            const microphone = audioCtx.createMediaStreamSource(stream);
+            
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            microphone.connect(analyser);
+            setMicActive(true);
+
+            const updateVolume = () => {
+                if (!stream.active) return;
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                setMicVolume(Math.min(100, Math.round((average / 128) * 100)));
+                requestAnimationFrame(updateVolume);
+            };
+            updateVolume();
+            
+        } catch (err) {
+            console.error('Microphone access denied:', err);
+            toast.error('Microphone permission denied. Speech recognition may fail.');
+        }
+    };
+
+    const stopMicAnalyzer = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+        }
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+        }
+        setMicActive(false);
+        setMicVolume(0);
+    };
+
     const toggleRecording = () => {
         if (isRecording) {
             recognitionRef.current?.stop();
             setIsRecording(false);
+            stopMicAnalyzer();
             if (recordStartRef.current) {
                 currentDurationRef.current = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
             }
@@ -149,23 +227,25 @@ const MockInterviewArena: React.FC = () => {
             recordStartRef.current = Date.now();
             recognitionRef.current?.start();
             setIsRecording(true);
-            toast.success("Listening... Speak your answer!");
+            startMicAnalyzer();
+            toast.success('Listening... Speak your answer!');
         }
     };
 
     const handleEvaluate = async () => {
-        if (userAnswer.trim().length < 5) return toast.error("Answer too short.");
+        if (userAnswer.trim().length < 5) return toast.error('Answer too short.');
         if (isRecording) {
             recognitionRef.current?.stop();
             setIsRecording(false);
+            stopMicAnalyzer();
             if (recordStartRef.current) {
                 currentDurationRef.current = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
             }
         }
 
         setIsEvaluating(true);
-        const currentQ = questions[currentIndex].question;
-        const typedReport = report as Report;
+        const currentQ = currentQuestion?.question || '';
+        const typedReport = report as any;
         
         const evaluation = await evaluateAnswer({
             question: currentQ,
@@ -191,16 +271,17 @@ const MockInterviewArena: React.FC = () => {
         if (isRecording) {
             recognitionRef.current?.stop();
             setIsRecording(false);
+            stopMicAnalyzer();
             if (recordStartRef.current) {
                 currentDurationRef.current = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
             }
         }
 
         setIsEvaluating(true);
-        const currentQ = questions[currentIndex].question;
-        const typedReport = report as Report;
+        const currentQ = currentQuestion?.question || '';
+        const typedReport = report as any;
 
-        const finalAns = userAnswer.trim().length >= 5 ? userAnswer : "No detailed answer recorded before timeout.";
+        const finalAns = userAnswer.trim().length >= 5 ? userAnswer : 'No detailed answer recorded before timeout.';
 
         const evaluation = await evaluateAnswer({
             question: currentQ,
@@ -223,16 +304,17 @@ const MockInterviewArena: React.FC = () => {
     };
 
     const handleNextQuestion = async () => {
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < 5) {
             setUserAnswer('');
             setCurrentFeedback(null);
             // Reset delivery analytics refs
             isSpokenRef.current = false;
             currentDurationRef.current = 0;
             recordStartRef.current = null;
+            await loadNextQuestion(nextIndex, qaHistory);
         } else {
-            const typedReport = report as Report;
+            const typedReport = report as any;
             const totalScore = Math.round(qaHistory.reduce((acc, curr) => acc + curr.score, 0) / qaHistory.length * 10); 
             const savedReport = await submitMockInterview({
                 interviewReportId: typedReport._id, jobTitle: typedReport.title, qaList: qaHistory, totalScore: totalScore
@@ -252,11 +334,22 @@ const MockInterviewArena: React.FC = () => {
         return Math.round((words / seconds) * 60);
     };
 
-    if (loading || questions.length === 0) return <div style={{ color: 'white', padding: '2rem', textAlign: 'center' }}>Loading Arena...</div>;
+    if (loading || !currentQuestion) {
+        return (
+            <div style={{ color: 'white', padding: '5rem 2rem', textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
+                <div style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-muted)' }}>Loading AI Interview Arena...</div>
+                <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+            </div>
+        );
+    }
 
-    const isLastQuestion = currentIndex === questions.length - 1;
+    const isLastQuestion = currentIndex === 4;
     const fillerCount = countFillerWords(userAnswer);
     const spokenWpm = calculateWpm(userAnswer, currentDurationRef.current);
+    
+    // Confidence and Hesitation Calculations
+    const hesitationScore = Math.min(10, Math.round((fillerCount * 1.5) + (currentDurationRef.current > 60 ? 2 : 0)));
+    const confidenceScore = Math.max(0, Math.min(100, Math.round(100 - (hesitationScore * 6) - (spokenWpm > 160 || spokenWpm < 90 ? 15 : 0))));
 
     return (
         <div style={{ maxWidth: '850px', margin: '0 auto', padding: '3rem 2rem', color: 'var(--text-main)', fontFamily: 'var(--font-sans)' }}>
@@ -265,10 +358,10 @@ const MockInterviewArena: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mock Interview Arena</h1>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Speaking skills practice arena powered by Gemini AI</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Adaptive speech & coding interview loop powered by Gemini 2.5</p>
                 </div>
                 <span className="glass-panel" style={{ padding: '8px 16px', borderRadius: '12px', fontWeight: 700, color: 'var(--accent-primary)', border: '1px solid var(--border-color)' }}>
-                    Q {currentIndex + 1} / {questions.length}
+                    Q {currentIndex + 1} / 5
                 </span>
             </div>
 
@@ -331,6 +424,19 @@ const MockInterviewArena: React.FC = () => {
                 </button>
             </div>
 
+            {/* Mic Health check & Live visualizer */}
+            {isRecording && micActive && (
+                <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block', animation: 'pulse 1.5s infinite' }}></span>
+                        MIC ACTIVE
+                    </span>
+                    <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${micVolume}%`, background: 'linear-gradient(90deg, var(--accent-emerald) 0%, var(--accent-primary) 100%)', transition: 'width 0.1s ease' }}></div>
+                    </div>
+                </div>
+            )}
+
             {/* Live Question Card */}
             <div className="glass-panel" style={{ padding: '2.5rem', position: 'relative', overflow: 'hidden' }}>
                 
@@ -359,7 +465,7 @@ const MockInterviewArena: React.FC = () => {
                 </div>
 
                 <h2 style={{ fontSize: '1.45rem', color: '#fff', marginBottom: '2rem', lineHeight: '1.45', fontWeight: 600 }}>
-                    {questions[currentIndex].question}
+                    {currentQuestion.question}
                 </h2>
 
                 {isPaused ? (
@@ -428,7 +534,7 @@ const MockInterviewArena: React.FC = () => {
 
                                 {/* Speech Delivery Analytics Widget */}
                                 {isSpokenRef.current && currentDurationRef.current > 0 && (
-                                    <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', textAlign: 'center' }}>
+                                    <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
                                         <div>
                                             <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Speaking Time</span>
                                             <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>{currentDurationRef.current}s</span>
@@ -446,6 +552,10 @@ const MockInterviewArena: React.FC = () => {
                                             <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-dark)', marginTop: '2px' }}>
                                                 {fillerCount > 3 ? 'Try to reduce' : 'Excellent clarity'}
                                             </span>
+                                        </div>
+                                        <div>
+                                            <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Confidence</span>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: confidenceScore > 75 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>{confidenceScore}%</span>
                                         </div>
                                     </div>
                                 )}

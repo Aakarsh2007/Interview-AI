@@ -1,6 +1,6 @@
-import { useContext, useEffect } from "react";
-import { InterviewContext } from "../interview.context";
-import { useParams } from "react-router";
+import { useContext, useEffect } from 'react';
+import { InterviewContext } from '../interview.context';
+import { useParams } from 'react-router';
 import toast from 'react-hot-toast';
 import { 
     getAllInterviewReports, 
@@ -10,34 +10,37 @@ import {
     deleteInterviewReport, 
     toggleTaskCompletion, 
     evaluateMockAnswer, 
-    saveMockInterview 
-} from "../services/interview.api";
+    saveMockInterview,
+    getNextQuestion,
+    getUserAnalytics,
+    GenerateReportParams
+} from '../services/interview.api';
 
 export const useInterview = () => {
     const context = useContext(InterviewContext);
     const { interviewId } = useParams<{ interviewId: string }>();
 
     if (!context) {
-        throw new Error("useInterview must be used within an InterviewProvider");
+        throw new Error('useInterview must be used within an InterviewProvider');
     }
 
     const { loading, setLoading, report, setReport, reports, setReports } = context;
 
-    const generateReport = async ({ jobDescription, selfDescription, resumeFile }: { jobDescription: string, selfDescription: string, resumeFile: File | null }) => {
+    const generateReport = async (params: GenerateReportParams) => {
         setLoading(true);
-        const loadingToast = toast.loading("Analyzing profile & generating strategy...");
+        const loadingToast = toast.loading('Analyzing profile & generating strategy...');
         try {
-            const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile });
+            const response = await generateInterviewReport(params);
             setReport(response.interviewReport);
             
-            localStorage.removeItem("jobDescription");
-            localStorage.removeItem("selfDescription");
+            localStorage.removeItem('jobDescription');
+            localStorage.removeItem('selfDescription');
             
-            toast.success("Strategy generated successfully!", { id: loadingToast });
+            toast.success('Strategy generated successfully!', { id: loadingToast });
             return response.interviewReport;
         } catch (error: any) {
-            console.error("Generate Report Error:", error);
-            toast.error(error.response?.data?.message || "Failed to generate report. Please check your inputs.", { id: loadingToast });
+            console.error('Generate Report Error:', error);
+            toast.error(error.response?.data?.message || 'Failed to generate report. Please check your inputs.', { id: loadingToast });
             return null;
         } finally {
             setLoading(false);
@@ -51,8 +54,8 @@ export const useInterview = () => {
             setReport(response.interviewReport);
             return response.interviewReport;
         } catch (error: any) {
-            console.error("Get Report Error:", error);
-            toast.error(error.response?.data?.message || "Failed to fetch report.");
+            console.error('Get Report Error:', error);
+            toast.error(error.response?.data?.message || 'Failed to fetch report.');
         } finally {
             setLoading(false);
         }
@@ -65,8 +68,8 @@ export const useInterview = () => {
             setReports(response.interviewReports);
             return response.interviewReports;
         } catch (error) {
-            console.error("Get All Reports Error:", error);
-            toast.error("Failed to fetch reports.");
+            console.error('Get All Reports Error:', error);
+            toast.error('Failed to fetch reports.');
         } finally {
             setLoading(false);
         }
@@ -76,10 +79,10 @@ export const useInterview = () => {
         try {
             await deleteInterviewReport(id);
             setReports(prevReports => prevReports.filter(r => r._id !== id));
-            toast.success("Report deleted successfully.");
+            toast.success('Report deleted successfully.');
         } catch (error) {
-            console.error("Delete Report Error:", error);
-            toast.error("Failed to delete report.");
+            console.error('Delete Report Error:', error);
+            toast.error('Failed to delete report.');
         }
     };
 
@@ -94,26 +97,26 @@ export const useInterview = () => {
                 };
             });
         } catch (error) {
-            console.error("Toggle Task Error:", error);
-            toast.error("Failed to update task status.");
+            console.error('Toggle Task Error:', error);
+            toast.error('Failed to update task status.');
         }
     };
 
     const getResumePdf = async (id: string) => {
         setLoading(true);
-        const loadingToast = toast.loading("Generating custom PDF...");
+        const loadingToast = toast.loading('Generating custom PDF...');
         try {
             const response = await generateResumePdf({ interviewReportId: id });
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }));
-            const link = document.createElement("a");
+            const url = window.URL.createObjectURL(new Blob([ response ], { type: 'application/pdf' }));
+            const link = document.createElement('a');
             link.href = url;
-            link.setAttribute("download", `resume_${id}.pdf`);
+            link.setAttribute('download', `resume_${id}.pdf`);
             document.body.appendChild(link);
             link.click();
-            toast.success("PDF Downloaded!", { id: loadingToast });
+            toast.success('PDF Downloaded!', { id: loadingToast });
         } catch (error) {
-            console.error("Generate PDF Error:", error);
-            toast.error("Failed to generate PDF.", { id: loadingToast });
+            console.error('Generate PDF Error:', error);
+            toast.error('Failed to generate PDF.', { id: loadingToast });
         } finally {
             setLoading(false);
         }
@@ -124,22 +127,53 @@ export const useInterview = () => {
             const response = await evaluateMockAnswer({ question, userAnswer, jobTitle });
             return response.evaluation;
         } catch (error) {
-            console.error("Evaluate Answer Error:", error);
-            toast.error("Failed to evaluate answer. Please try again.");
+            console.error('Evaluate Answer Error:', error);
+            toast.error('Failed to evaluate answer. Please try again.');
+            return null;
+        }
+    };
+
+    const fetchNextQuestion = async (payload: {
+        jobTitle: string;
+        experienceLevel?: string;
+        company?: string;
+        pastQuestions: any[];
+        questionIndex: number;
+    }) => {
+        try {
+            const response = await getNextQuestion(payload);
+            return response.question;
+        } catch (error) {
+            console.error('Fetch Next Question Error:', error);
+            toast.error('Failed to generate next question.');
             return null;
         }
     };
 
     const submitMockInterview = async (payload: { interviewReportId: string, jobTitle: string, qaList: any[], totalScore: number }) => {
         setLoading(true);
-        const loadingToast = toast.loading("Saving interview results...");
+        const loadingToast = toast.loading('Saving interview results...');
         try {
             const response = await saveMockInterview(payload);
-            toast.success("Mock Interview saved successfully!", { id: loadingToast });
+            toast.success('Mock Interview saved successfully!', { id: loadingToast });
             return response.mockInterview;
         } catch (error) {
-            console.error("Save Mock Interview Error:", error);
-            toast.error("Failed to save mock interview.", { id: loadingToast });
+            console.error('Save Mock Interview Error:', error);
+            toast.error('Failed to save mock interview.', { id: loadingToast });
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchAnalytics = async () => {
+        setLoading(true);
+        try {
+            const response = await getUserAnalytics();
+            return response.analytics;
+        } catch (error) {
+            console.error('Fetch Analytics Error:', error);
+            toast.error('Failed to load dashboard analytics.');
             return null;
         } finally {
             setLoading(false);
@@ -157,6 +191,6 @@ export const useInterview = () => {
     return { 
         loading, report, reports, 
         generateReport, getReportById, getReports, getResumePdf, deleteReport, toggleTask, 
-        evaluateAnswer, submitMockInterview 
+        evaluateAnswer, submitMockInterview, fetchNextQuestion, fetchAnalytics
     };
 };

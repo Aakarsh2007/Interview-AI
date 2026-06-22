@@ -1,21 +1,40 @@
-import axios from "axios";
+import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     withCredentials: true
 });
 
-export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }: { jobDescription: string, selfDescription: string, resumeFile: File | null }) => {
+export interface GenerateReportParams {
+    jobDescription: string;
+    selfDescription: string;
+    resumeFile: File | null;
+    role?: string;
+    experienceLevel?: string;
+    company?: string;
+}
+
+export const generateInterviewReport = async ({
+    jobDescription,
+    selfDescription,
+    resumeFile,
+    role,
+    experienceLevel,
+    company
+}: GenerateReportParams) => {
     const formData = new FormData();
-    formData.append("jobDescription", jobDescription);
-    formData.append("selfDescription", selfDescription);
+    formData.append('jobDescription', jobDescription);
+    formData.append('selfDescription', selfDescription);
+    if (role) formData.append('role', role);
+    if (experienceLevel) formData.append('experienceLevel', experienceLevel);
+    if (company) formData.append('company', company);
     if (resumeFile) {
-        formData.append("resume", resumeFile);
+        formData.append('resume', resumeFile);
     }
 
-    const response = await api.post("/api/interview/", formData, {
+    const response = await api.post('/api/interview/', formData, {
         headers: {
-            "Content-Type": "multipart/form-data"
+            'Content-Type': 'multipart/form-data'
         }
     });
 
@@ -28,13 +47,13 @@ export const getInterviewReportById = async (interviewId: string) => {
 };
 
 export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/");
+    const response = await api.get('/api/interview/');
     return response.data;
 };
 
 export const generateResumePdf = async ({ interviewReportId }: { interviewReportId: string }) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
-        responseType: "blob"
+        responseType: 'blob'
     });
     return response.data;
 };
@@ -50,21 +69,49 @@ export const toggleTaskCompletion = async (id: string, taskString: string) => {
 };
 
 export const evaluateMockAnswer = async ({ question, userAnswer, jobTitle }: { question: string, userAnswer: string, jobTitle: string }) => {
-    const response = await api.post("/api/interview/mock/evaluate", { question, userAnswer, jobTitle });
+    const response = await api.post('/api/interview/mock/evaluate', { question, userAnswer, jobTitle });
+    return response.data;
+};
+
+export const getNextQuestion = async ({
+    jobTitle,
+    experienceLevel,
+    company,
+    pastQuestions,
+    questionIndex
+}: {
+    jobTitle: string;
+    experienceLevel?: string;
+    company?: string;
+    pastQuestions: any[];
+    questionIndex: number;
+}) => {
+    const response = await api.post('/api/interview/mock/next-question', {
+        jobTitle,
+        experienceLevel,
+        company,
+        pastQuestions,
+        questionIndex
+    });
     return response.data;
 };
 
 export const saveMockInterview = async ({ interviewReportId, jobTitle, qaList, totalScore }: { interviewReportId: string, jobTitle: string, qaList: any[], totalScore: number }) => {
-    const response = await api.post("/api/interview/mock/save", { interviewReportId, jobTitle, qaList, totalScore });
+    const response = await api.post('/api/interview/mock/save', { interviewReportId, jobTitle, qaList, totalScore });
     return response.data;
 };
 
 export const getAllMockInterviews = async () => {
-    const response = await api.get("/api/interview/mock");
+    const response = await api.get('/api/interview/mock');
     return response.data;
 };
 
 export const deleteMockInterview = async (id: string) => {
     const response = await api.delete(`/api/interview/mock/${id}`);
+    return response.data;
+};
+
+export const getUserAnalytics = async () => {
+    const response = await api.get('/api/interview/analytics');
     return response.data;
 };

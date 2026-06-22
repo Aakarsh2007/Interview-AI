@@ -1,43 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useInterview } from '../hooks/useInterview';
 
-interface MockInterview {
-  _id: string;
-  jobTitle: string;
-  totalScore: number;
-  createdAt: string;
+interface AnalyticsData {
+  totalInterviews: number;
+  totalStrategies: number;
+  averageScore: number;
+  strongestSkill: string;
+  weakestSkill: string;
+  scoreHistory: { date: string; score: number }[];
 }
 
-interface StrategyReport {
-  _id: string;
-  title: string;
-  matchScore: number;
-  createdAt: string;
-}
+export const MockAnalytics: React.FC = () => {
+  const { fetchAnalytics, loading } = useInterview();
+  const [data, setData] = useState<AnalyticsData | null>(null);
 
-interface MockAnalyticsProps {
-  mocks: MockInterview[];
-  strategies: StrategyReport[];
-}
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      const res = await fetchAnalytics();
+      if (res) {
+        setData(res);
+      }
+    };
+    loadAnalytics();
+  }, []);
 
-export const MockAnalytics: React.FC<MockAnalyticsProps> = ({ mocks, strategies }) => {
-  // Sort data by date
-  const sortedMocks = [...mocks]
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(-7); // Last 7 mocks
+  if (loading || !data) {
+    return (
+      <div style={{ color: 'white', padding: '3rem', textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
+        <div style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Loading analytics dashboard...</div>
+        <div style={{ width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '1rem auto' }}></div>
+      </div>
+    );
+  }
 
-  const sortedStrategies = [...strategies]
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(-7); // Last 7 strategies
-
-  const averageMockScore = mocks.length > 0
-    ? Math.round(mocks.reduce((acc, curr) => acc + curr.totalScore, 0) / mocks.length)
-    : 0;
-
-  const averageMatchScore = strategies.length > 0
-    ? Math.round(strategies.reduce((acc, curr) => acc + curr.matchScore, 0) / strategies.length)
-    : 0;
-
-  const totalInterviews = mocks.length;
+  const { totalInterviews, totalStrategies, averageScore, strongestSkill, weakestSkill, scoreHistory } = data;
 
   // Chart configuration
   const width = 600;
@@ -46,76 +42,65 @@ export const MockAnalytics: React.FC<MockAnalyticsProps> = ({ mocks, strategies 
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  // Generate path points for mock scores
-  const mockPoints = sortedMocks.map((m, index) => {
-    const x = padding + (index / Math.max(1, sortedMocks.length - 1)) * chartWidth;
-    const y = padding + chartHeight - (m.totalScore / 100) * chartHeight;
-    return { x, y, score: m.totalScore, title: m.jobTitle };
+  // Generate points for the SVG score history line
+  const points = scoreHistory.map((pt, index) => {
+    const x = padding + (index / Math.max(1, scoreHistory.length - 1)) * chartWidth;
+    const y = padding + chartHeight - (pt.score / 100) * chartHeight;
+    return { x, y, score: pt.score, date: pt.date };
   });
 
-  // Generate path points for strategy match scores
-  const strategyPoints = sortedStrategies.map((s, index) => {
-    const x = padding + (index / Math.max(1, sortedStrategies.length - 1)) * chartWidth;
-    const y = padding + chartHeight - (s.matchScore / 100) * chartHeight;
-    return { x, y, score: s.matchScore, title: s.title };
-  });
-
-  const getLinePath = (points: { x: number; y: number }[]) => {
-    if (points.length === 0) return '';
-    return points.reduce((path, p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`), '');
+  const getLinePath = (pts: typeof points) => {
+    if (pts.length === 0) return '';
+    return pts.reduce((path, p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`), '');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', fontFamily: 'var(--font-sans)' }}>
       {/* KPI Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '80px', height: '80px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(143,68,253,0.15) 0%, transparent 70%)' }}></div>
           <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Average Mock Score</span>
-          <span className="glow-text-purple" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{averageMockScore}%</span>
+          <span className="glow-text-purple" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{averageScore}%</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)' }}>Performance across {totalInterviews} sessions</span>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '80px', height: '80px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,45,120,0.15) 0%, transparent 70%)' }}></div>
-          <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Average Profile Match</span>
-          <span className="glow-text-pink" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-secondary)' }}>{averageMatchScore}%</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)' }}>Calculated against all target JD uploads</span>
+          <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Strategies Generated</span>
+          <span className="glow-text-pink" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-secondary)' }}>{totalStrategies}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)' }}>Tailored roadmap plans generated</span>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '80px', height: '80px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)' }}></div>
-          <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Preparation Rating</span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-emerald)', textShadow: '0 0 20px rgba(16,185,129,0.3)' }}>
-            {averageMockScore >= 75 ? 'Advanced' : averageMockScore >= 50 ? 'Intermediate' : totalInterviews === 0 ? 'No Data' : 'Novice'}
+          <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Strongest Domain</span>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-emerald)', textShadow: '0 0 20px rgba(16,185,129,0.3)', marginTop: '0.5rem' }}>
+            {strongestSkill}
           </span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)' }}>Progress status metrics based on AI feedback</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)', marginTop: 'auto' }}>Best performing interview track</span>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '80px', height: '80px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 70%)' }}></div>
+          <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Area for Improvement</span>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-amber)', textShadow: '0 0 20px rgba(245,158,11,0.3)', marginTop: '0.5rem' }}>
+            {weakestSkill}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dark)', marginTop: 'auto' }}>Lowest performing category</span>
         </div>
       </div>
 
       {/* SVG Analytics Chart */}
       <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>Performance Analytics</h3>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Visualization of match rates and interview performance over time</p>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)' }}></span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-main)' }}>Mock Interview Score</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-secondary)', boxShadow: '0 0 10px var(--accent-secondary)' }}></span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-main)' }}>Resume Match Score</span>
-            </div>
-          </div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>Performance History</h3>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculated trend of interview scorecard marks over time</p>
         </div>
 
-        {totalInterviews === 0 && strategies.length === 0 ? (
-          <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            Generate strategies and finish mock interviews to see performance trends.
+        {scoreHistory.length === 0 ? (
+          <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+            Complete mock interviews to begin visualizing performance trends.
           </div>
         ) : (
           <div style={{ width: '100%', overflowX: 'auto' }}>
@@ -131,10 +116,10 @@ export const MockAnalytics: React.FC<MockAnalyticsProps> = ({ mocks, strategies 
                 );
               })}
 
-              {/* Mock Score Path */}
-              {mockPoints.length > 1 && (
+              {/* Progress Trendline */}
+              {points.length > 1 && (
                 <path
-                  d={getLinePath(mockPoints)}
+                  d={getLinePath(points)}
                   fill="none"
                   stroke="var(--accent-primary)"
                   strokeWidth="3.5"
@@ -144,32 +129,12 @@ export const MockAnalytics: React.FC<MockAnalyticsProps> = ({ mocks, strategies 
                 />
               )}
 
-              {/* Strategy Match Score Path */}
-              {strategyPoints.length > 1 && (
-                <path
-                  d={getLinePath(strategyPoints)}
-                  fill="none"
-                  stroke="var(--accent-secondary)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeDasharray="4 2"
-                  style={{ filter: 'drop-shadow(0 4px 8px rgba(255,45,120,0.4))' }}
-                />
-              )}
-
-              {/* Data points and hover nodes */}
-              {mockPoints.map((p, i) => (
-                <g key={`mock-${i}`}>
+              {/* Data points */}
+              {points.map((p, i) => (
+                <g key={`pt-${i}`}>
                   <circle cx={p.x} cy={p.y} r="5" fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth="3" />
-                  <title>{`${p.title}: ${p.score}%`}</title>
-                </g>
-              ))}
-
-              {strategyPoints.map((p, i) => (
-                <g key={`strategy-${i}`}>
-                  <circle cx={p.x} cy={p.y} r="4" fill="var(--bg-primary)" stroke="var(--accent-secondary)" strokeWidth="2" />
-                  <title>{`${p.title}: ${p.score}%`}</title>
+                  <text x={p.x} y={p.y - 12} fill="#fff" fontSize="9" fontWeight="700" textAnchor="middle">{p.score}%</text>
+                  <text x={p.x} y={height - padding + 15} fill="var(--text-muted)" fontSize="9" textAnchor="middle">{p.date}</text>
                 </g>
               ))}
 
@@ -182,3 +147,4 @@ export const MockAnalytics: React.FC<MockAnalyticsProps> = ({ mocks, strategies 
     </div>
   );
 };
+export default MockAnalytics;
