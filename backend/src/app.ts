@@ -6,6 +6,7 @@ import authRouter from './routes/auth.routes';
 import interviewRouter from './routes/interview.routes';
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security Hardening with Helmet
 app.use(helmet());

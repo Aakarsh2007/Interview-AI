@@ -116,7 +116,7 @@ Features a robust, cookie-based JWT authentication flow with an enterprise-grade
 
 ```text
 Interview-AI/
-├── Frontend/
+├── frontend/
 │   ├── public/
 │   ├── src/
 │   │   ├── App.tsx
@@ -209,7 +209,7 @@ npm run dev
 **3. Frontend Setup**
 Open a new terminal window:
 ```bash
-cd Frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -246,7 +246,7 @@ Since the backend uses **Puppeteer** for PDF generation, Railway is highly recom
 ### 3. Frontend Deployment on Vercel
 * Log in to [Vercel](https://vercel.com/).
 * Click **Add New** $\rightarrow$ **Project**, link your GitHub account, and select the `Interview-AI` repository.
-* Configure the **Root Directory** to `Frontend`.
+* Configure the **Root Directory** to `frontend`.
 * Keep the Framework Preset as **Vite**.
 * Add the following Environment Variable:
   * `VITE_API_BASE_URL` = `https://your-backend-api.up.railway.app` (Your live backend endpoint).
